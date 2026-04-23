@@ -3,25 +3,15 @@
   backdrop-filter: blur(10px);
   color: #e2e8f0;
   padding: 15px 30px;
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
-}
-
-.navbar-container {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-/* Logo */
 .navbar-logo h2 {
   color: #22c55e;
-  font-weight: bold;
 }
 
-/* Links */
 .navbar-links {
   list-style: none;
   display: flex;
@@ -31,20 +21,6 @@
 .navbar-links a {
   text-decoration: none;
   color: #cbd5f5;
-  font-size: 15px;
-  position: relative;
-  transition: 0.3s;
-}
-
-/* Hover underline animation */
-.navbar-links a::after {
-  content: '';
-  position: absolute;
-  width: 0%;
-  height: 2px;
-  left: 0;
-  bottom: -5px;
-  background: #22c55e;
   transition: 0.3s;
 }
 
@@ -52,21 +28,11 @@
   color: #22c55e;
 }
 
-.navbar-links a:hover::after {
-  width: 100%;
+.logout-btn {
+  cursor: pointer;
+  color: #f87171;
 }
 
-/* Auth Button */
-.btn-login {
-  padding: 8px 16px;
-  background: #22c55e;
-  color: #020617;
-  border-radius: 8px;
-  text-decoration: none;
-  font-weight: 500;
-  transition: 0.3s;
-}
-
-.btn-login:hover {
-  background: #16a34a;
+.logout-btn:hover {
+  color: #ef4444;
 }
