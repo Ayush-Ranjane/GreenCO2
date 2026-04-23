@@ -1,0 +1,97 @@
+.home {
+  background: #0a0903;
+  color: #e2e8f0;
+  font-family: Arial, sans-serif;
+}
+
+/* HERO */
+.hero {
+  text-align: center;
+  padding: 80px 20px;
+  max-width: 800px;
+  margin: auto;
+}
+
+.hero h1 {
+  font-size: 36px;
+  color: #22c55e;
+  margin-bottom: 20px;
+}
+
+.hero p {
+  font-size: 16px;
+  color: #94a3b8;
+  margin-bottom: 30px;
+}
+
+.hero-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+}
+
+.btn-primary {
+  background: #22c55e;
+  color: #020617;
+  padding: 10px 20px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.btn-secondary {
+  border: 1px solid #22c55e;
+  color: #22c55e;
+  padding: 10px 20px;
+  border-radius: 8px;
+  text-decoration: none;
+}
+
+/* VALUE */
+.value {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  padding: 50px 20px;
+  flex-wrap: wrap;
+}
+
+.value-card {
+  background: #0f172a;
+  padding: 20px;
+  border-radius: 12px;
+  width: 250px;
+  text-align: center;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.value-card h3 {
+  color: #22c55e;
+  margin-bottom: 10px;
+}
+
+.value-card p {
+  font-size: 14px;
+  color: #94a3b8;
+}
+
+/* IMPACT */
+.impact {
+  text-align: center;
+  padding: 50px 20px;
+}
+
+.impact h2 {
+  margin-bottom: 20px;
+  color: #38bdf8;
+}
+
+.impact ul {
+  list-style: none;
+  padding: 0;
+}
+
+.impact li {
+  margin: 10px 0;
+  color: #cbd5f5;
+}

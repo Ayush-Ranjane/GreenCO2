@@ -1,0 +1,11 @@
+/* Add this to your existing App.css */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh; /* Ensures the container takes up at least the full screen height */
+}
+
+.main-content {
+  flex: 1; /* This makes the main content area expand and push the footer down */
+  padding: 2rem;
+}
