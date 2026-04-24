@@ -1,6 +1,18 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import API from "../api/api";
 
 const Dashboard = () => {
+  const [data, setData] = useState({
+    total_co2: 0,
+    total_fuel: 0
+  });
+
+  useEffect(() => {
+    API.get("/api/dashboard")
+      .then(res => setData(res.data))
+      .catch(err => console.log(err));
+  }, []);
+
   return (
     <div className="page">
       <h1>Dashboard</h1>
@@ -8,17 +20,12 @@ const Dashboard = () => {
       <div className="cards">
         <div className="card">
           <h3>Total CO₂ Emission</h3>
-          <p>12,540 kg</p>
+          <p>{data.total_co2} kg</p>
         </div>
 
         <div className="card">
           <h3>Fuel Usage</h3>
-          <p>4,680 L</p>
-        </div>
-
-        <div className="card">
-          <h3>Status</h3>
-          <p>Within Limits ✅</p>
+          <p>{data.total_fuel} L</p>
         </div>
       </div>
     </div>

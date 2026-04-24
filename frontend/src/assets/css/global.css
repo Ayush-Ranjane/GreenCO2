@@ -1,0 +1,66 @@
+/* ── Global Component Overrides ──
+   These complement app.css and provide legacy class support
+   for older pages. Variables defined in index.css apply here. */
+
+/* Profile / form labels */
+label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 6px;
+  font-family: var(--font-body);
+}
+
+/* Generic input (used in Profile.jsx via className="input") */
+.input {
+  display: block;
+  width: 100%;
+  padding: 12px 16px;
+  background: rgba(2, 11, 20, 0.7);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  margin-bottom: 16px;
+  transition: var(--transition);
+  outline: none;
+}
+
+.input:focus {
+  border-color: var(--green-500);
+  box-shadow: 0 0 0 3px var(--green-glow);
+}
+
+.input:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: rgba(2, 11, 20, 0.4);
+}
+
+/* Generic secondary button (used in Profile.jsx) */
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 24px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border-bright);
+  background: transparent;
+  color: var(--green-400);
+  transition: var(--transition);
+  margin-top: 8px;
+}
+
+.btn-secondary:hover {
+  background: var(--green-glow);
+  border-color: var(--green-500);
+  transform: translateY(-2px);
+}

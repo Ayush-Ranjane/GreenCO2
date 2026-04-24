@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";  // ✅ correct
 import API from "../api/api";
+import "../assets/css/Auth.css";
 
 const Auth = ({ setIsLoggedIn }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [company, setCompany] = useState("");
 
   const navigate = useNavigate();
 
@@ -13,6 +15,7 @@ const handleLogin = async () => {
     const res = await API.post("/api/login", {
       email,
       password,
+      company
     });
 
     // save token
@@ -23,6 +26,9 @@ const handleLogin = async () => {
 
     // redirect
     navigate("/client");
+
+    localStorage.setItem("token", res.data.token);
+    localStorage.setItem("user_email", email); // ADD THIS
     
   } catch (err) {
     console.log(err.response?.data);
@@ -31,21 +37,50 @@ const handleLogin = async () => {
 };
 
   return (
-    <div>
-      <h2>Login</h2>
+    <div className="auth-page">
+      <div className="auth-card">
 
-      <input
-        placeholder="Email"
-        onChange={(e) => setEmail(e.target.value)}
-      />
+        <div className="auth-logo">
+          <span>🌱</span>
+        </div>
 
-      <input
-        type="password"
-        placeholder="Password"
-        onChange={(e) => setPassword(e.target.value)}
-      />
+        <h2>Welcome Back</h2>
+        <p className="auth-subtitle">Sign in to your GreenCO₂ account</p>
 
-      <button onClick={handleLogin}>Login</button>
+        <div className="auth-field">
+          <label className="auth-label">Email</label>
+          <input
+            className="auth-input"
+            placeholder="you@company.com"
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </div>
+
+        <div className="auth-field">
+          <label className="auth-label">Password</label>
+          <input
+            className="auth-input"
+            type="password"
+            placeholder="••••••••"
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </div>
+
+        <div className="auth-field">
+          <label className="auth-label">Company</label>
+          <input
+            className="auth-input"
+            placeholder="Company Name"
+            onChange={(e) => setCompany(e.target.value)}
+          />
+        </div>
+
+        
+
+        <button className="auth-btn" onClick={handleLogin}>
+          Sign In →
+        </button>
+      </div>
     </div>
   );
 };

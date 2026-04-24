@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard.jsx"; // ✅ ADD
 import Analytics from "./pages/Analytics"; // ✅ ADD
 import Alerts from "./pages/Alerts";       // ✅ ADD
 import Report from "./pages/Report";       // ✅ ADD
+import Profile from './pages/Profile.jsx';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(null);
@@ -25,7 +26,7 @@ function App() {
 
   return (
     <Router>
-      <Navbar isLoggedIn={isLoggedIn} />
+      <Navbar isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />
 
       <Routes>
         {/* Public */}
@@ -48,6 +49,13 @@ function App() {
         <Route
           path="/report"
           element={isLoggedIn ? <Report /> : <Navigate to="/" />}
+        />
+
+        import Profile from "./pages/Profile"; // ADD THIS
+
+        <Route
+          path="/profile"
+          element={isLoggedIn ? <Profile /> : <Navigate to="/" />}
         />
       </Routes>
 

@@ -1,12 +1,16 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import "../assets/css/Navbar.css";
 
-const Navbar = ({ isLoggedIn }) => {
+const Navbar = ({ isLoggedIn, setIsLoggedIn }) => {
+  const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
 
   const handleLogout = () => {
     localStorage.removeItem("token");
-    window.location.reload();
+    localStorage.removeItem("user_email");
+    setIsLoggedIn(false);
+    navigate("/");
   };
 
   return (
@@ -28,7 +32,20 @@ const Navbar = ({ isLoggedIn }) => {
             <li><Link to="/analytics">Analytics</Link></li>
             <li><Link to="/alerts">Alerts</Link></li>
             <li><Link to="/report">Report</Link></li>
-            <li onClick={handleLogout} className="logout-btn">Logout</li>
+
+            {/* PROFILE ICON */}
+            <li className="profile-container">
+              <div onClick={() => setOpen(!open)} className="profile-icon">
+                👤
+              </div>
+
+              {open && (
+                <div className="dropdown">
+                  <Link to="/profile">Profile</Link>
+                  <div onClick={handleLogout}>Logout</div>
+                </div>
+              )}
+            </li>
           </>
         )}
 
