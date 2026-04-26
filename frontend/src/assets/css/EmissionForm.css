@@ -1,0 +1,372 @@
+/* ============================================================
+   EmissionForm.css — Multi-Source Emission Entry Styles
+   Matches the glassmorphic dark-mode design system in app.css
+   ============================================================ */
+
+/* ── Page subtitle ─────────────────────────────────────────── */
+.page-subtitle {
+  color: var(--text-muted, #9ca3af);
+  margin: -0.5rem 0 1.5rem;
+  font-size: 0.95rem;
+}
+
+/* ── Main card ─────────────────────────────────────────────── */
+.emission-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* ── Date row ──────────────────────────────────────────────── */
+.emission-date-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.emission-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted, #9ca3af);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.emission-date-input {
+  padding: 0.55rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary, #f9fafb);
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  color-scheme: dark;
+}
+
+.emission-date-input:focus {
+  border-color: var(--green-500, #22c55e);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+}
+
+/* ── Sources section header ────────────────────────────────── */
+.emission-sources-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.emission-factor-hint {
+  font-size: 0.75rem;
+  color: var(--text-muted, #9ca3af);
+  opacity: 0.75;
+}
+
+/* ── Rows container ────────────────────────────────────────── */
+.emission-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* ── Individual source row ─────────────────────────────────── */
+.emission-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  transition: border-color 0.2s, background 0.2s;
+  flex-wrap: wrap;
+}
+
+.emission-row:hover {
+  background: rgba(255, 255, 255, 0.055);
+  border-color: rgba(255, 255, 255, 0.13);
+}
+
+.emission-row--error {
+  border-color: rgba(239, 68, 68, 0.45) !important;
+  background: rgba(239, 68, 68, 0.05) !important;
+}
+
+/* ── Row number badge ──────────────────────────────────────── */
+.row-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--green-500, #22c55e);
+  font-size: 0.72rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 0.55rem;
+}
+
+/* ── Field wrappers ────────────────────────────────────────── */
+.emission-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.emission-field--type   { flex: 2; min-width: 180px; }
+.emission-field--amount { flex: 2; min-width: 160px; }
+.emission-field--preview { flex: 1; min-width: 110px; justify-content: center; padding-top: 0.55rem; }
+
+/* ── Select ────────────────────────────────────────────────── */
+.emission-select {
+  padding: 0.55rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary, #f9fafb);
+  font-size: 0.9rem;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  width: 100%;
+}
+
+.emission-select:focus {
+  border-color: var(--green-500, #22c55e);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+}
+
+/* ── Amount input + unit suffix ────────────────────────────── */
+.emission-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.emission-input {
+  width: 100%;
+  padding: 0.55rem 2.8rem 0.55rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary, #f9fafb);
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  /* Remove browser number input spinners */
+  -moz-appearance: textfield;
+}
+.emission-input::-webkit-inner-spin-button,
+.emission-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+.emission-input:focus {
+  border-color: var(--green-500, #22c55e);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+}
+
+.emission-input--error {
+  border-color: rgba(239, 68, 68, 0.6) !important;
+}
+
+.emission-unit {
+  position: absolute;
+  right: 0.65rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted, #9ca3af);
+  pointer-events: none;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.emission-row-error {
+  font-size: 0.75rem;
+  color: #f87171;
+  margin-top: 0.1rem;
+}
+
+/* ── Per-row CO₂ preview ───────────────────────────────────── */
+.row-preview {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--green-500, #22c55e);
+  white-space: nowrap;
+}
+
+.row-preview--empty {
+  color: rgba(156, 163, 175, 0.4);
+  font-weight: 400;
+}
+
+/* ── Remove button ─────────────────────────────────────────── */
+.emission-remove-btn {
+  background: transparent;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  color: #f87171;
+  border-radius: 8px;
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+  margin-top: 0.45rem;
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+}
+
+.emission-remove-btn:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.55);
+  transform: scale(1.1);
+}
+
+.emission-remove-btn:disabled {
+  opacity: 0.2;
+  cursor: not-allowed;
+}
+
+/* ── Add Source button ─────────────────────────────────────── */
+.emission-add-btn {
+  align-self: flex-start;
+  padding: 0.5rem 1.1rem;
+  border-radius: 10px;
+  border: 1px dashed rgba(34, 197, 94, 0.4);
+  background: rgba(34, 197, 94, 0.07);
+  color: var(--green-500, #22c55e);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+  letter-spacing: 0.02em;
+}
+
+.emission-add-btn:hover {
+  background: rgba(34, 197, 94, 0.14);
+  border-color: rgba(34, 197, 94, 0.65);
+  transform: translateY(-1px);
+}
+
+/* ── Live preview total ────────────────────────────────────── */
+.emission-preview-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.8rem 1.1rem;
+  border-radius: 12px;
+  background: rgba(34, 197, 94, 0.07);
+  border: 1px solid rgba(34, 197, 94, 0.18);
+  font-size: 0.9rem;
+  color: var(--text-muted, #9ca3af);
+}
+
+.preview-total-value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--green-500, #22c55e);
+}
+
+/* ── Submit button ─────────────────────────────────────────── */
+.emission-submit-btn {
+  align-self: flex-end;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 150px;
+  justify-content: center;
+}
+
+/* ── Spinner ───────────────────────────────────────────────── */
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.65s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Success result card ───────────────────────────────────── */
+.result-card {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  animation: fadeInUp 0.4s ease both;
+}
+
+.result-icon {
+  font-size: 2.2rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.result-content h3 {
+  color: var(--green-500, #22c55e);
+  margin: 0 0 0.25rem;
+  font-size: 1.05rem;
+}
+
+.result-content p {
+  margin: 0 0 0.4rem;
+  color: var(--text-muted, #9ca3af);
+  font-size: 0.9rem;
+}
+
+.result-value {
+  font-size: 1.9rem;
+  font-weight: 800;
+  color: var(--text-primary, #f9fafb);
+  line-height: 1.1;
+}
+
+.result-unit {
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--text-muted, #9ca3af);
+}
+
+/* ── Accessibility: screen-reader-only labels ──────────────── */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Entrance animation ────────────────────────────────────── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+/* ── Responsive tweaks ─────────────────────────────────────── */
+@media (max-width: 600px) {
+  .emission-date-row        { flex-direction: column; align-items: flex-start; }
+  .emission-sources-header  { flex-direction: column; align-items: flex-start; }
+  .emission-field--type,
+  .emission-field--amount,
+  .emission-field--preview  { min-width: unset; flex: 1 1 100%; }
+  .emission-row             { flex-direction: column; }
+  .row-badge                { margin-top: 0; }
+  .result-card              { flex-direction: column; text-align: center; }
+}

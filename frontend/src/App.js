@@ -19,13 +19,14 @@ import Navbar from './components/Navbar.jsx';
 import Footer from './components/Footer.jsx';
 
 /* ── Page Components ── */
-import Home      from './pages/Home';
-import Auth      from './pages/Auth.jsx';
+import Home from './pages/Home';
+import Auth from './pages/Auth.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Analytics from './pages/Analytics';
-import Alerts    from './pages/Alerts';
-import Report    from './pages/Report';
-import Profile   from './pages/Profile.jsx';
+import Alerts from './pages/Alerts';
+import Report from './pages/Report';
+import Profile from './pages/Profile.jsx';
+import EmissionForm from "./pages/EmissionForm";
 
 /* ── Global Styles ── */
 import './assets/css/app.css';
@@ -55,7 +56,7 @@ function App() {
 
       <Routes>
         {/* ── Public Routes ── */}
-        <Route path="/"     element={<Home />} />
+        <Route path="/" element={<Home />} />
         <Route path="/auth" element={<Auth setIsLoggedIn={setIsLoggedIn} />} />
 
         {/* ── Protected Routes ──
@@ -80,6 +81,10 @@ function App() {
         <Route
           path="/profile"
           element={isLoggedIn ? <Profile /> : <Navigate to="/" />}
+        />
+        <Route
+          path="/emission-form"
+          element={isLoggedIn ? <EmissionForm /> : <Navigate to="/" />}
         />
       </Routes>
 

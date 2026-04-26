@@ -1,16 +1,18 @@
 /**
- * Auth.jsx — Login Page
- * ----------------------
+ * Auth.jsx — Login / Register Page
+ * ----------------------------------
  * Props (via prop-drilling from App.js):
  *   setIsLoggedIn {function} — updates App-level auth state on successful login
  *
- * Logic:
- *  - Sends POST /api/login with email + password
- *  - On success: stores JWT token + email in localStorage, updates auth state,
- *    then redirects to /client (Dashboard)
- *  - On failure: shows an alert with the error message
+ * Modes: "login" (default) | "register"
  *
- * NOTE: localStorage is set once only (was duplicated in original code — fixed).
+ * Login flow:
+ *  - POST /api/login → store JWT + email → redirect to /client
+ *
+ * Register flow:
+ *  - POST /api/register → auto-login (POST /api/login) → redirect to /client
+ *
+ * Error key: backend returns { error: "..." } — use err.response?.data?.error
  */
 
 import React, { useState } from 'react';
@@ -19,50 +21,89 @@ import API from '../api/api';
 import '../assets/css/Auth.css';
 
 const Auth = ({ setIsLoggedIn }) => {
-  /* Controlled inputs for the login form */
+  /* "login" or "register" */
+  const [mode, setMode] = useState('login');
+
+  /* Shared form fields */
   const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
+  const [company,  setCompany]  = useState('');
 
-  /* Loading state — disables the button while the API call is in-flight */
   const [loading, setLoading] = useState(false);
+  const [errMsg,  setErrMsg]  = useState('');
 
   const navigate = useNavigate();
 
-  /**
-   * handleLogin — async login handler
-   * POSTs credentials to Flask backend.
-   * FIX: localStorage.setItem was called twice in original code — now called once.
-   */
-  const handleLogin = async () => {
-    setLoading(true); // disable button while request is pending
+  /** Switch between login and register tabs — clear error & form on switch */
+  const switchMode = (newMode) => {
+    setMode(newMode);
+    setErrMsg('');
+    setEmail('');
+    setPassword('');
+    setCompany('');
+  };
 
+  /** Shared post-login handler — stores token and redirects */
+  const finalizeLogin = (token, userEmail) => {
+    localStorage.setItem('token',      token);
+    localStorage.setItem('user_email', userEmail);
+    setIsLoggedIn(true);
+    navigate('/client');
+  };
+
+  /** POST /api/login */
+  const handleLogin = async () => {
+    setErrMsg('');
+    if (!email || !password) {
+      setErrMsg('Email and password are required.');
+      return;
+    }
+
+    setLoading(true);
     try {
       const res = await API.post('/api/login', { email, password });
-
-
-
-      /* Update App-level state (prop-drilled from App.js) */
-      setIsLoggedIn(true);
-
-      /* ── Store auth data in localStorage (once, not twice) ── */
-      localStorage.setItem('token',      res.data.token);
-      localStorage.setItem('user_email', email);
-      
-      /* Redirect to the protected dashboard */
-      navigate('/client');
-
+      finalizeLogin(res.data.token, email.trim().toLowerCase());
     } catch (err) {
-      /* Show backend error message if available, else generic fallback */
-      const msg = err.response?.data?.message || 'Invalid credentials. Please try again.';
-      alert(msg);
+      // Backend returns { error: "..." } — not "message"
+      setErrMsg(err.response?.data?.error || 'Invalid credentials. Please try again.');
     } finally {
-      setLoading(false); // re-enable button regardless of outcome
+      setLoading(false);
     }
   };
 
-  /* Allow submitting the form with the Enter key */
+  /** POST /api/register → then auto-login */
+  const handleRegister = async () => {
+    setErrMsg('');
+    if (!email || !password || !company) {
+      setErrMsg('Email, password, and company name are all required.');
+      return;
+    }
+    if (password.length < 6) {
+      setErrMsg('Password must be at least 6 characters.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // 1. Register
+      await API.post('/api/register', { email, password, company });
+
+      // 2. Auto-login with the same credentials
+      const loginRes = await API.post('/api/login', { email, password });
+      finalizeLogin(loginRes.data.token, email.trim().toLowerCase());
+
+    } catch (err) {
+      setErrMsg(err.response?.data?.error || 'Registration failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /** Allow submitting the form with the Enter key */
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter') handleLogin();
+    if (e.key === 'Enter') {
+      mode === 'login' ? handleLogin() : handleRegister();
+    }
   };
 
   return (
@@ -73,8 +114,35 @@ const Auth = ({ setIsLoggedIn }) => {
         <div className="auth-logo">
           <span>🌱</span>
         </div>
-        <h2>Welcome Back</h2>
-        <p className="auth-subtitle">Sign in to your GreenCO₂ account</p>
+        <h2>{mode === 'login' ? 'Welcome Back' : 'Create Account'}</h2>
+        <p className="auth-subtitle">
+          {mode === 'login'
+            ? 'Sign in to your GreenCO₂ account'
+            : 'Join GreenCO₂ and start tracking emissions'}
+        </p>
+
+        {/* ── Mode Tabs ── */}
+        <div className="auth-tabs">
+          <button
+            className={`auth-tab ${mode === 'login' ? 'auth-tab--active' : ''}`}
+            onClick={() => switchMode('login')}
+          >
+            Sign In
+          </button>
+          <button
+            className={`auth-tab ${mode === 'register' ? 'auth-tab--active' : ''}`}
+            onClick={() => switchMode('register')}
+          >
+            Register
+          </button>
+        </div>
+
+        {/* ── Error Message ── */}
+        {errMsg && (
+          <div className="auth-error" role="alert">
+            ⚠️ {errMsg}
+          </div>
+        )}
 
         {/* ── Email Field ── */}
         <div className="auth-field">
@@ -90,6 +158,22 @@ const Auth = ({ setIsLoggedIn }) => {
           />
         </div>
 
+        {/* ── Company Field (register only) ── */}
+        {mode === 'register' && (
+          <div className="auth-field">
+            <label className="auth-label">Company Name</label>
+            <input
+              className="auth-input"
+              type="text"
+              placeholder="e.g. Acme Industries"
+              value={company}
+              onChange={(e) => setCompany(e.target.value)}
+              onKeyDown={handleKeyDown}
+              autoComplete="organization"
+            />
+          </div>
+        )}
+
         {/* ── Password Field ── */}
         <div className="auth-field">
           <label className="auth-label">Password</label>
@@ -100,18 +184,37 @@ const Auth = ({ setIsLoggedIn }) => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             onKeyDown={handleKeyDown}
-            autoComplete="current-password"
+            autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
           />
         </div>
 
         {/* ── Submit Button — disabled while loading ── */}
         <button
           className="auth-btn"
-          onClick={handleLogin}
+          onClick={mode === 'login' ? handleLogin : handleRegister}
           disabled={loading}
         >
-          {loading ? 'Signing in…' : 'Sign In →'}
+          {loading
+            ? (mode === 'login' ? 'Signing in…' : 'Creating account…')
+            : (mode === 'login' ? 'Sign In →' : 'Create Account →')}
         </button>
+
+        {/* ── Mode Switch Link ── */}
+        <p className="auth-switch">
+          {mode === 'login' ? (
+            <>Don&apos;t have an account?{' '}
+              <button className="auth-switch-btn" onClick={() => switchMode('register')}>
+                Register here
+              </button>
+            </>
+          ) : (
+            <>Already have an account?{' '}
+              <button className="auth-switch-btn" onClick={() => switchMode('login')}>
+                Sign in
+              </button>
+            </>
+          )}
+        </p>
 
       </div>
     </div>

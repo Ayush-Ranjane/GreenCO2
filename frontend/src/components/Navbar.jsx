@@ -21,9 +21,9 @@ const Navbar = ({ isLoggedIn, setIsLoggedIn }) => {
   /* Controls the profile dropdown open/close state */
   const [open, setOpen] = useState(false);
 
-  const navigate  = useNavigate();
-  const location  = useLocation(); // used to highlight the active nav link
-  const dropRef   = useRef(null);  // ref for click-outside detection
+  const navigate = useNavigate();
+  const location = useLocation(); // used to highlight the active nav link
+  const dropRef = useRef(null);  // ref for click-outside detection
 
   /**
    * handleLogout — clears auth tokens and resets global login state
@@ -97,6 +97,9 @@ const Navbar = ({ isLoggedIn, setIsLoggedIn }) => {
             </li>
             <li className={isActive('/report')}>
               <Link to="/report">Report</Link>
+            </li>
+            <li className={isActive('/emission-form')}>
+              <Link to="/emission-form">Log Emissions</Link>
             </li>
 
             {/* ── Profile Dropdown ──
