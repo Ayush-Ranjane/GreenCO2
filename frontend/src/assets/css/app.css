@@ -29,22 +29,15 @@
   color: var(--text-primary);
   letter-spacing: -0.02em;
   margin-bottom: 32px;
-  position: relative;
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 4px;
 }
 
-.page h1::after {
-  content: '';
-  display: block;
-  height: 3px;
-  width: 40px;
-  background: linear-gradient(90deg, var(--green-500), var(--sky-400));
-  border-radius: 2px;
-  margin-left: 4px;
-  align-self: flex-end;
-  margin-bottom: 4px;
+/* Emoji icon before page heading */
+.page-icon {
+  font-size: 1.5rem;
+  margin-right: 6px;
 }
 
 /* ── Cards ── */

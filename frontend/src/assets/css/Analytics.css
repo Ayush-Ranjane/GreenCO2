@@ -1,0 +1,114 @@
+/* ================================================================
+   Analytics.css — Analytics Page Styles
+   ================================================================
+   Adds styles for:
+     • .analytics-card       : Insight card wrapper variants
+     • .analytics-icon       : Large emoji icon area
+     • .analytics-value      : Big percentage / metric number
+     • .analytics-desc       : Description text
+     • .analytics-badge      : Severity status badge
+     • .analytics-recommendations : Recommendations panel
+     • .recommendation-list  : Bulleted recommendation items
+   ================================================================ */
+
+/* ── Analytics Card ── */
+
+/* Left border colour variants to indicate severity */
+.analytics-card--alert {
+  border-left: 3px solid #ef4444; /* red — over threshold */
+}
+
+.analytics-card--warn {
+  border-left: 3px solid #eab308; /* yellow — approaching limit */
+}
+
+/* Large emoji icon at the top of each card */
+.analytics-icon {
+  font-size: 2rem;
+  margin-bottom: 12px;
+}
+
+/* Big metric number (e.g. "+8%") */
+.analytics-value {
+  font-size: 2.5rem !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.05em;
+  color: var(--text-primary) !important;
+  margin: 4px 0 10px !important;
+}
+
+/* Descriptive text beneath the value */
+.analytics-desc {
+  font-size: 0.875rem !important;
+  color: var(--text-secondary) !important;
+  line-height: 1.65 !important;
+  font-weight: 400 !important;
+  margin-bottom: 14px !important;
+}
+
+/* ── Status Badge ── */
+
+.analytics-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 4px 12px;
+  border-radius: 100px;
+}
+
+.analytics-badge--warn {
+  background: rgba(234, 179, 8, 0.12);
+  color: #fde68a;
+  border: 1px solid rgba(234, 179, 8, 0.3);
+}
+
+/* ── Recommendations Panel ── */
+
+.analytics-recommendations {
+  margin-top: 8px;
+}
+
+.analytics-recommendations h3 {
+  margin-bottom: 20px !important;
+}
+
+/* List of AI recommendation items */
+.recommendation-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.recommendation-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+}
+
+.recommendation-list li:hover {
+  border-color: var(--border-bright);
+  color: var(--text-primary);
+  background: rgba(34, 197, 94, 0.04);
+}
+
+/* Icon at the start of each recommendation */
+.rec-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  margin-top: 1px;
+}

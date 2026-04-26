@@ -1,0 +1,139 @@
+/* ================================================================
+   Report.css — Report Page Styles
+   ================================================================
+   Adds styles for:
+     • .report-header-card  : Period + status row card
+     • .report-period       : Period label + value layout
+     • .report-status-badge : Green "Compliant" badge
+     • .report-rows         : Container for summary rows
+     • .report-row          : Individual label–value row
+     • .report-download-btn : Download CTA button
+   ================================================================ */
+
+/* ── Report Header Card ── */
+
+/* Full-width card with period on left, status badge on right */
+.report-header-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+/* Period label + value stacked vertically */
+.report-period {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.period-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+.period-value {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+/* Compliance status badge */
+.report-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 6px 16px;
+  border-radius: 100px;
+  background: rgba(34, 197, 94, 0.12);
+  color: var(--green-400);
+  border: 1px solid var(--border-bright);
+}
+
+/* ── Summary Rows ── */
+
+/* Divider-separated list of label: value pairs */
+.report-rows {
+  display: flex;
+  flex-direction: column;
+  margin-top: 8px;
+}
+
+/* Single row — spaced between label and value */
+.report-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+
+/* Remove bottom border from last row */
+.report-row:last-child {
+  border-bottom: none;
+}
+
+/* Row label — muted, left aligned */
+.report-row-label {
+  color: var(--text-muted);
+  font-weight: 500;
+  flex-shrink: 0;
+  min-width: 150px;
+}
+
+/* Row value — primary text, right aligned */
+.report-row-value {
+  color: var(--text-primary);
+  font-weight: 600;
+  text-align: right;
+  line-height: 1.5;
+}
+
+/* Green highlight for compliance status row */
+.report-row-value--green {
+  color: var(--green-400);
+}
+
+/* ── Download Button ── */
+
+/* Full-width download button with top margin */
+.report-download-btn {
+  width: 100%;
+  padding: 14px;
+  margin-top: 8px;
+  font-size: 0.95rem;
+  justify-content: center;
+}
+
+/* ── Responsive ── */
+
+@media (max-width: 480px) {
+  .report-header-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .report-row {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .report-row-value {
+    text-align: left;
+  }
+
+  .report-row-label {
+    min-width: unset;
+  }
+}

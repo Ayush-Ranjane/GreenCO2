@@ -1,5 +1,11 @@
 /* ── Navbar ── */
 
+/* ── Extra variables needed by Navbar & Dashboard ── */
+:root {
+  --color-danger:  #ef4444;
+  --color-warning: #eab308;
+}
+
 .navbar {
   position: sticky;
   top: 0;
@@ -16,8 +22,14 @@
   box-shadow: 0 4px 32px rgba(0, 0, 0, 0.4);
 }
 
-/* Logo */
-.navbar-logo h2 {
+/* Logo link — removes default Link underline/color */
+.navbar-brand-link {
+  text-decoration: none;
+}
+
+/* Logo text */
+.navbar-logo h2,
+.navbar-brand-link {
   font-size: 1.2rem;
   font-weight: 800;
   letter-spacing: -0.03em;
@@ -53,6 +65,27 @@
   border-radius: var(--radius-sm);
   transition: var(--transition);
   letter-spacing: 0.01em;
+}
+
+/* Active route — highlight the link for the current page */
+.navbar-links li.active a {
+  color: var(--green-400);
+  background: rgba(34, 197, 94, 0.08);
+}
+
+/* Sign In CTA — green pill button in the nav */
+.nav-cta {
+  background: rgba(34, 197, 94, 0.12) !important;
+  color: var(--green-400) !important;
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius-sm);
+  padding: 6px 16px !important;
+  font-weight: 600 !important;
+}
+
+.nav-cta:hover {
+  background: rgba(34, 197, 94, 0.2) !important;
+  color: var(--green-400) !important;
 }
 
 .navbar-links a:hover {
@@ -119,8 +152,7 @@
   animation: fadeInUp 0.2s ease both;
 }
 
-.dropdown a,
-.dropdown div {
+.dropdown a {
   padding: 10px 14px;
   border-radius: var(--radius-sm);
   text-decoration: none;
@@ -131,20 +163,25 @@
   transition: var(--transition);
 }
 
-.dropdown a:hover,
-.dropdown div:hover {
+.dropdown a:hover {
   color: var(--text-primary);
   background: rgba(34, 197, 94, 0.08);
 }
 
-/* Divider between Profile & Logout */
-.dropdown div {
+/* Logout item — separate class to avoid styling all divs in dropdown */
+.dropdown-logout {
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
   color: #f87171;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: var(--transition);
   border-top: 1px solid var(--border);
   margin-top: 4px;
 }
 
-.dropdown div:hover {
+.dropdown-logout:hover {
   color: #fca5a5;
   background: rgba(239, 68, 68, 0.08);
 }

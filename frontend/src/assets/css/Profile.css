@@ -1,0 +1,162 @@
+/* ================================================================
+   Profile.css — Profile Page Styles
+   ================================================================
+   Adds styles for:
+     • .profile-header-card  : Avatar + email header row
+     • .profile-avatar       : Initials circle avatar
+     • .profile-header-info  : Email + role stacked text
+     • .profile-status-badge : Active status pill
+     • .profile-edit-actions : Cancel + Save button row
+     • .profile-coming-soon  : Muted "coming soon" text
+     • .access-rows          : System access row list
+     • .access-row           : Individual access row
+   ================================================================ */
+
+/* ── Profile Header Card ── */
+
+/* Horizontal layout: avatar | info | status */
+.profile-header-card {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 8px;
+}
+
+/* ── Avatar Circle ── */
+
+/* Initials-based avatar — generated from first 2 chars of email */
+.profile-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--green-500), var(--sky-400));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #020617;
+  flex-shrink: 0;
+  letter-spacing: -0.02em;
+}
+
+/* ── Header Info ── */
+
+/* Email + role text area */
+.profile-header-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+/* Primary email text */
+.profile-email {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Secondary role label */
+.profile-role {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+/* ── Active Status Badge ── */
+
+.profile-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 5px 14px;
+  border-radius: 100px;
+  background: rgba(34, 197, 94, 0.1);
+  color: var(--green-400);
+  border: 1px solid var(--border-bright);
+  flex-shrink: 0;
+}
+
+/* ── Edit Actions Row ── */
+
+/* Row with Cancel + Save buttons side by side */
+.profile-edit-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.profile-edit-actions .btn,
+.profile-edit-actions .btn-secondary {
+  flex: 1;
+  justify-content: center;
+}
+
+/* ── Coming Soon Text ── */
+
+.profile-coming-soon {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  padding: 12px 0;
+}
+
+/* ── System Access Rows ── */
+
+/* Vertical stack of access info rows */
+.access-rows {
+  display: flex;
+  flex-direction: column;
+  margin-top: 8px;
+}
+
+/* Single row: label | value */
+.access-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.875rem;
+}
+
+.access-row:last-child {
+  border-bottom: none;
+}
+
+/* Left label — muted */
+.access-row span:first-child {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* Right value — primary */
+.access-value {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* Green "● Active" status */
+.access-value--active {
+  color: var(--green-400);
+}
+
+/* ── Responsive ── */
+
+@media (max-width: 480px) {
+  .profile-header-card {
+    flex-wrap: wrap;
+  }
+
+  .profile-status-badge {
+    width: 100%;
+    justify-content: center;
+  }
+}
