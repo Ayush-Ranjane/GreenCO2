@@ -1,75 +1,184 @@
-/**
- * Analytics.jsx — Analytics Overview Page
- * -----------------------------------------
- * Shows emission trend insights and fuel efficiency metrics.
- * Currently uses static data (same pattern as Dashboard).
- *
- * Future enhancement: fetch from GET /api/analytics to get
- * real computed statistics from the ML model.
- *
- * No props needed — standalone page component.
- */
-
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import {
+  LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend
+} from 'recharts';
 import '../assets/css/Analytics.css';
 
+
 const Analytics = () => {
+  const [data, setData] = useState([]);
+  const [trend, setTrend] = useState(0);
+  const [days, setDays] = useState(7);
+  const [peakDay, setPeakDay] = useState(null);
+  const [recommendation, setRecommendation] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [modelInfo, setModelInfo] = useState(null);
+
+useEffect(() => {
+
+  const fetchAllData = async () => {
+    try {
+      setLoading(true);
+
+      const token = localStorage.getItem("token");
+
+      // 🔹 Model Info
+      const infoRes = await axios.get("http://localhost:5000/model-info", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setModelInfo(infoRes.data);
+
+      // 🔹 Past Data
+      const pastRes = await axios.get("http://localhost:5000/api/dashboard", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      const pastFormatted = pastRes.data.trend.map(item => ({
+        date: item.date,
+        past: item.co2
+      }));
+
+      // 🔹 Prediction
+      const predRes = await axios.get(
+        `http://localhost:5000/predict?days=${days}`,
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      const futureFormatted = predRes.data.map(item => ({
+        date: item.ds,
+        future: item.yhat
+      }));
+
+      // 🔥 Merge
+      const merged = [...pastFormatted, ...futureFormatted];
+      setData(merged);
+
+      // 🔥 Trend
+      if (futureFormatted.length >= 2) {
+        const first = futureFormatted[0].future;
+        const last = futureFormatted[futureFormatted.length - 1].future;
+        const percent = ((last - first) / first) * 100;
+
+        setTrend(percent.toFixed(2));
+
+        if (percent > 10) {
+          setRecommendation("⚠️ Emissions rising fast. Reduce diesel usage immediately.");
+        } else if (percent > 0) {
+          setRecommendation("📈 Slight increase detected. Monitor operations.");
+        } else {
+          setRecommendation("✅ Emissions decreasing. Good performance.");
+        }
+      }
+
+      // 🔥 Peak Day
+      if (futureFormatted.length > 0) {
+        const max = futureFormatted.reduce((prev, curr) =>
+          curr.future > prev.future ? curr : prev
+        );
+        setPeakDay(max);
+      }
+
+    } catch (err) {
+      console.error("Analytics error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchAllData();
+
+}, [days]);
   return (
     <div className="page">
 
-      {/* ── Page Header ── */}
-      <h1>
-        <span className="page-icon">📈</span>
-        Analytics
-      </h1>
+      {loading && <div className="loader"></div>}
 
-      {/* ── Insight Cards ──
-          Each card shows a specific analytical insight with a status indicator */}
-      <div className="cards">
+      <h1>📈 Analytics</h1>
 
-        {/* Emission Trend Card */}
-        <div className="card analytics-card analytics-card--alert">
-          <div className="analytics-icon">🌫️</div>
-          <h3>Emission Trend</h3>
-          <p className="analytics-value">+8%</p>
-          <p className="analytics-desc">
-            CO₂ emissions increased by 8% this month compared to the previous cycle.
-            Current level: 12,540 kg.
-          </p>
-          <div className="analytics-badge analytics-badge--warn">Above Average</div>
-        </div>
-
-        {/* Fuel Efficiency Card */}
-        <div className="card analytics-card analytics-card--warn">
-          <div className="analytics-icon">⛽</div>
-          <h3>Fuel Efficiency</h3>
-          <p className="analytics-value">−5%</p>
-          <p className="analytics-desc">
-            Efficiency decreased by 5% compared to last operational cycle.
-            Review engine load data for root cause.
-          </p>
-          <div className="analytics-badge analytics-badge--warn">Needs Review</div>
-        </div>
-
+      {/* 🔹 Days Selector */}
+      <div style={{ marginBottom: "20px" }}>
+        <label>Select Prediction Days: </label>
+        <select value={days} onChange={(e) => setDays(Number(e.target.value))}>
+          <option value={7}>7 Days</option>
+          <option value={14}>14 Days</option>
+          <option value={30}>30 Days</option>
+        </select>
       </div>
 
-      {/* ── Recommendations Panel ── */}
+      <div className="card">
+        <h3>📊 Model Info</h3>
+
+        {modelInfo ? (
+          <>
+            <p><strong>Last Trained:</strong> {modelInfo.trained_at}</p>
+            <p><strong>Data Points:</strong> {modelInfo.data_points}</p>
+            <p><strong>Accuracy (MAE):</strong> {modelInfo.mae}</p>
+          </>
+        ) : (
+          <p>No model info available</p>
+        )}
+      </div>
+
+      {/* 🔥 Trend Card */}
+      <div className="card analytics-card">
+        <h3>{days}-Day Emission Forecast</h3>
+        <p className="analytics-value">
+          {trend > 0 ? `+${trend}%` : `${trend}%`}
+        </p>
+        <p className="analytics-desc">
+          Predicted emission trend over next {days} days.
+        </p>
+      </div>
+
+      {/* 🔥 Peak Day */}
+      <div className="card">
+        <h3>🔥 Peak Emission Day</h3>
+        {peakDay ? (
+          <>
+            <p>{peakDay.date}</p>
+            <p>{peakDay.future.toFixed(2)} kg CO₂</p>
+          </>
+        ) : (
+          <p>No data</p>
+        )}
+      </div>
+
+      {/* 🤖 AI Recommendation */}
       <div className="card analytics-recommendations">
-        <h3>🤖 AI Recommendations</h3>
-        <ul className="recommendation-list">
-          <li>
-            <span className="rec-icon">💡</span>
-            Switch to LNG for boiler operations — estimated 15% CO₂ reduction.
-          </li>
-          <li>
-            <span className="rec-icon">🔧</span>
-            Schedule engine maintenance — irregular combustion detected.
-          </li>
-          <li>
-            <span className="rec-icon">📅</span>
-            Shift heavy loads to off-peak hours to improve fuel efficiency.
-          </li>
-        </ul>
+        <h3>🤖 AI Insight</h3>
+        <p>{recommendation}</p>
+      </div>
+
+      {/* 📊 Combined Graph */}
+      <div className="card">
+        <h3>Past vs Predicted Emissions</h3>
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={data}>
+            <XAxis dataKey="date" />
+            <YAxis />
+            <Tooltip />
+            <Legend />
+
+            {/* Past */}
+            <Line
+              type="monotone"
+              dataKey="past"
+              stroke="#8884d8"
+              name="Past"
+            />
+
+            {/* Future */}
+            <Line
+              type="monotone"
+              dataKey="future"
+              stroke="#82ca9d"
+              name="Predicted"
+            />
+          </LineChart>
+        </ResponsiveContainer>
       </div>
 
     </div>

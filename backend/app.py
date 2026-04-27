@@ -17,7 +17,7 @@ Key design decisions
 
 import os
 import logging
-
+import json
 from flask import Flask, request, jsonify
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import (
@@ -29,6 +29,10 @@ from flask_jwt_extended import (
 from flask_cors import CORS
 from dotenv import load_dotenv
 import psycopg2
+
+from ml_engine.prediction.predict import predict_company 
+from apscheduler.schedulers.background import BackgroundScheduler
+from ml_engine.prediction.train_model import train_all_models
 
 load_dotenv()
 
@@ -92,11 +96,25 @@ def get_db():
         port=os.getenv("DB_PORT"),
     )
 
+
+scheduler = BackgroundScheduler()
+
+# ⏰ Run every day (you can change timing)
+scheduler.add_job(train_all_models, 'interval', hours=24)
+
+scheduler.start()
+
 # ── Health check ──────────────────────────────────────────────────────────────
 
 @app.route("/")
 def home():
     return jsonify({"message": "GreenCO2 Backend Running 🚀"}), 200
+
+
+@app.route("/retrain", methods=["POST"])
+def retrain():
+    train_all_models()
+    return {"message": "Model retrained"}
 
 # ── Auth endpoints ────────────────────────────────────────────────────────────
 
@@ -596,6 +614,78 @@ def calculate():
     except Exception as e:
         conn.rollback()
         logger.exception("Calculate error: %s", e)
+        return jsonify({"error": str(e)}), 400
+
+    finally:
+        cur.close()
+        conn.close()
+
+# ── 7days prediction ──────────────────────────────────────────────────────────
+
+@app.route("/predict", methods=["GET"])
+@jwt_required()
+def predict():
+    conn = get_db()
+    cur = conn.cursor()
+
+    try:
+        # ✅ Get logged-in user
+        user_email = get_jwt_identity()
+
+        # ✅ Fetch company_id
+        cur.execute(
+            "SELECT company_id FROM users WHERE email = %s",
+            (user_email,)
+        )
+        row = cur.fetchone()
+
+        if not row:
+            return jsonify({"error": "User not found"}), 404
+
+        company_id = row[0]
+
+        # ✅ Optional days param
+        days = request.args.get("days", default=7, type=int)
+
+        # ✅ Predict
+        result = predict_company(company_id, days)
+
+        return jsonify(result.to_dict(orient="records")), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+    finally:
+        cur.close()
+        conn.close()
+
+@app.route("/model-info", methods=["GET"])
+@jwt_required()
+def model_info():
+    conn = get_db()
+    cur = conn.cursor()
+
+    try:
+        user_email = get_jwt_identity()
+
+        cur.execute(
+            "SELECT company_id FROM users WHERE email = %s",
+            (user_email,)
+        )
+        row = cur.fetchone()
+
+        if not row:
+            return jsonify({"error": "User not found"}), 404
+
+        company_id = row[0]
+
+        # 🔹 Load metadata
+        with open(f"models/meta_{company_id}.json", "r") as f:
+            meta = json.load(f)
+
+        return jsonify(meta), 200
+
+    except Exception as e:
         return jsonify({"error": str(e)}), 400
 
     finally:
