@@ -1,8 +1,7 @@
 <div align="center">
-
-![GreenCO2 Logo](file:///C:/Users/ayush/.gemini/antigravity/brain/a8d83422-67d0-4bd2-8789-b3f45a242856/greenco2_logo_1777399314504.png)
-
-# 🌍 GreenCO2
+    
+# 🌱 GreenCO2
+    
 ### *Empowering Sustainable Enterprises with Data-Driven Carbon Intelligence*
 
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev/)
