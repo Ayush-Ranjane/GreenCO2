@@ -1,0 +1,9 @@
+flask
+flask-bcrypt
+flask-jwt-extended
+flask-cors
+python-dotenv
+psycopg2-binary
+apscheduler
+pandas
+prophet
