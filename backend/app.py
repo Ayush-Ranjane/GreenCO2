@@ -33,6 +33,7 @@ import psycopg2
 from ml_engine.prediction.predict import predict_company 
 from apscheduler.schedulers.background import BackgroundScheduler
 from ml_engine.prediction.train_model import train_all_models
+from ml_engine.anomaly.detect import detect_company_anomalies
 
 load_dotenv()
 
@@ -629,10 +630,8 @@ def predict():
     cur = conn.cursor()
 
     try:
-        # ✅ Get logged-in user
         user_email = get_jwt_identity()
 
-        # ✅ Fetch company_id
         cur.execute(
             "SELECT company_id FROM users WHERE email = %s",
             (user_email,)
@@ -644,16 +643,24 @@ def predict():
 
         company_id = row[0]
 
-        # ✅ Optional days param
         days = request.args.get("days", default=7, type=int)
 
-        # ✅ Predict
         result = predict_company(company_id, days)
 
-        return jsonify(result.to_dict(orient="records")), 200
+        # Convert dataframe → JSON
+        if hasattr(result, "to_dict"):
+            data = result.to_dict(orient="records")
+        else:
+            data = result
+        return jsonify({
+            "company_id": company_id,
+            "days": days,
+            "prediction": data
+        }), 200
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 400
+        logger.exception("Predict error: %s", e)
+        return jsonify({"error": str(e)}), 500
 
     finally:
         cur.close()
@@ -680,13 +687,49 @@ def model_info():
         company_id = row[0]
 
         # 🔹 Load metadata
-        with open(f"models/meta_{company_id}.json", "r") as f:
+        with open(f"ml_engine/prediction/models/meta_{company_id}.json", "r") as f:
             meta = json.load(f)
 
         return jsonify(meta), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 400
+
+    finally:
+        cur.close()
+        conn.close()
+
+# ── Anomaly ───────────────────────────────────────────────────────────────
+
+@app.route("/anomaly", methods=["GET"])
+@jwt_required()
+def anomaly():
+    conn = get_db()
+    cur = conn.cursor()
+
+    try:
+        user_email = get_jwt_identity()
+
+        cur.execute(
+            "SELECT company_id FROM users WHERE email = %s",
+            (user_email,)
+        )
+        row = cur.fetchone()
+
+        if not row:
+            return jsonify({"error": "User not found"}), 404
+
+        company_id = row[0]
+
+        result = detect_company_anomalies(company_id)
+
+        return jsonify({
+            "company_id": company_id,
+            "anomalies": result
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
     finally:
         cur.close()

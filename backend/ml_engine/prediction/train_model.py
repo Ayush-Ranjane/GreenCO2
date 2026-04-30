@@ -1,7 +1,7 @@
 from prophet import Prophet
 import pickle
 import os
-from ml_engine.prediction.db.load_data import df
+from ml_engine.db.load_data import df
 import pandas as pd
 from datetime import datetime
 import json

@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import {
-  LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend
+  LineChart, Line, XAxis, YAxis, Tooltip,
+  ResponsiveContainer, Legend
 } from 'recharts';
 import '../assets/css/Analytics.css';
-
 
 const Analytics = () => {
   const [data, setData] = useState([]);
@@ -15,82 +15,101 @@ const Analytics = () => {
   const [loading, setLoading] = useState(false);
   const [modelInfo, setModelInfo] = useState(null);
 
-useEffect(() => {
+  useEffect(() => {
 
-  const fetchAllData = async () => {
-    try {
-      setLoading(true);
+    const fetchAllData = async () => {
+      try {
+        setLoading(true);
 
-      const token = localStorage.getItem("token");
+        const token = localStorage.getItem("token");
 
-      // 🔹 Model Info
-      const infoRes = await axios.get("http://localhost:5000/model-info", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setModelInfo(infoRes.data);
-
-      // 🔹 Past Data
-      const pastRes = await axios.get("http://localhost:5000/api/dashboard", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      const pastFormatted = pastRes.data.trend.map(item => ({
-        date: item.date,
-        past: item.co2
-      }));
-
-      // 🔹 Prediction
-      const predRes = await axios.get(
-        `http://localhost:5000/predict?days=${days}`,
-        {
+        // 🔹 Model Info
+        const infoRes = await axios.get("http://localhost:5000/model-info", {
           headers: { Authorization: `Bearer ${token}` }
-        }
-      );
+        });
+        setModelInfo(infoRes.data);
 
-      const futureFormatted = predRes.data.map(item => ({
-        date: item.ds,
-        future: item.yhat
-      }));
+        // 🔹 Past Data
+        const pastRes = await axios.get("http://localhost:5000/api/dashboard", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
 
-      // 🔥 Merge
-      const merged = [...pastFormatted, ...futureFormatted];
-      setData(merged);
+        const pastFormatted = pastRes.data.trend.map(item => ({
+          date: item.date,
+          past: item.co2
+        }));
 
-      // 🔥 Trend
-      if (futureFormatted.length >= 2) {
-        const first = futureFormatted[0].future;
-        const last = futureFormatted[futureFormatted.length - 1].future;
-        const percent = ((last - first) / first) * 100;
-
-        setTrend(percent.toFixed(2));
-
-        if (percent > 10) {
-          setRecommendation("⚠️ Emissions rising fast. Reduce diesel usage immediately.");
-        } else if (percent > 0) {
-          setRecommendation("📈 Slight increase detected. Monitor operations.");
-        } else {
-          setRecommendation("✅ Emissions decreasing. Good performance.");
-        }
-      }
-
-      // 🔥 Peak Day
-      if (futureFormatted.length > 0) {
-        const max = futureFormatted.reduce((prev, curr) =>
-          curr.future > prev.future ? curr : prev
+        // 🔹 Prediction
+        const predRes = await axios.get(
+          `http://localhost:5000/predict?days=${days}`,
+          {
+            headers: { Authorization: `Bearer ${token}` }
+          }
         );
-        setPeakDay(max);
+
+        const futureFormatted = predRes.data.prediction.map(item => ({
+          date: item.ds,
+          future: item.yhat
+        }));
+
+        // 🔹 Anomaly Detection
+        const anomalyRes = await axios.get(
+          "http://localhost:5000/anomaly",
+          {
+            headers: { Authorization: `Bearer ${token}` }
+          }
+        );
+
+        // Create anomaly map → date => anomaly
+        const anomalyMap = {};
+        anomalyRes.data.anomalies.forEach(item => {
+          anomalyMap[item.ds] = item.anomaly;
+        });
+
+        // 🔥 Merge all data
+        const merged = [...pastFormatted, ...futureFormatted].map(item => ({
+          ...item,
+          anomaly: anomalyMap[item.date] || 1
+        }));
+
+        setData(merged);
+
+        // 🔥 Trend Calculation
+        if (futureFormatted.length >= 2) {
+          const first = futureFormatted[0].future;
+          const last = futureFormatted[futureFormatted.length - 1].future;
+          const percent = ((last - first) / first) * 100;
+
+          setTrend(percent.toFixed(2));
+
+          if (percent > 10) {
+            setRecommendation("⚠️ Emissions rising fast. Reduce diesel usage immediately.");
+          } else if (percent > 0) {
+            setRecommendation("📈 Slight increase detected. Monitor operations.");
+          } else {
+            setRecommendation("✅ Emissions decreasing. Good performance.");
+          }
+        }
+
+        // 🔥 Peak Day
+        if (futureFormatted.length > 0) {
+          const max = futureFormatted.reduce((prev, curr) =>
+            curr.future > prev.future ? curr : prev
+          );
+          setPeakDay(max);
+        }
+
+      } catch (err) {
+        console.error("Analytics error:", err);
+      } finally {
+        setLoading(false);
       }
+    };
 
-    } catch (err) {
-      console.error("Analytics error:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    fetchAllData();
 
-  fetchAllData();
+  }, [days]);
 
-}, [days]);
   return (
     <div className="page">
 
@@ -108,6 +127,7 @@ useEffect(() => {
         </select>
       </div>
 
+      {/* 🔹 Model Info */}
       <div className="card">
         <h3>📊 Model Info</h3>
 
@@ -146,15 +166,25 @@ useEffect(() => {
         )}
       </div>
 
-      {/* 🤖 AI Recommendation */}
+      {/* 🤖 Recommendation */}
       <div className="card analytics-recommendations">
         <h3>🤖 AI Insight</h3>
         <p>{recommendation}</p>
       </div>
 
-      {/* 📊 Combined Graph */}
+      {/* 🚨 Anomaly Summary */}
+      <div className="card">
+        <h3>🚨 Anomaly Detection</h3>
+        <p>
+          Total anomalies detected:{" "}
+          {data.filter(d => d.anomaly === -1).length}
+        </p>
+      </div>
+
+      {/* 📊 Graph */}
       <div className="card">
         <h3>Past vs Predicted Emissions</h3>
+
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={data}>
             <XAxis dataKey="date" />
@@ -168,6 +198,20 @@ useEffect(() => {
               dataKey="past"
               stroke="#8884d8"
               name="Past"
+              dot={(props) => {
+                const { payload } = props;
+                if (payload.anomaly === -1) {
+                  return (
+                    <circle
+                      cx={props.cx}
+                      cy={props.cy}
+                      r={6}
+                      fill="red"
+                    />
+                  );
+                }
+                return null;
+              }}
             />
 
             {/* Future */}
