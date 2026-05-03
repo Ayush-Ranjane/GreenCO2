@@ -1,0 +1,150 @@
+/* ── NotificationSettings.css ──────────────────────────────────────────────── */
+
+.notif-settings {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 22px 24px;
+  max-width: 560px;
+}
+
+/* Header */
+.notif-header {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+.notif-icon { font-size: 26px; flex-shrink: 0; }
+.notif-header h3 { margin: 0 0 4px; font-size: 16px; color: #f0fdf4; }
+.notif-header p  { margin: 0; font-size: 13px; color: #64748b; line-height: 1.5; }
+
+/* Toast */
+.notif-toast {
+  border-radius: 7px;
+  padding: 9px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+.notif-toast--ok    { background: #052e16; color: #4ade80; border: 1px solid #166534; }
+.notif-toast--error { background: #450a0a; color: #f87171; border: 1px solid #7f1d1d; }
+
+/* Add form */
+.notif-add-form {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.notif-input {
+  flex: 1;
+  min-width: 200px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: #e2e8f0;
+  border-radius: 7px;
+  padding: 9px 13px;
+  font-size: 13px;
+  transition: border-color .15s;
+}
+.notif-input:focus { outline: none; border-color: #16a34a; }
+.notif-add-btn {
+  padding: 9px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 7px;
+  border: none;
+  background: #16a34a;
+  color: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity .15s;
+}
+.notif-add-btn:hover    { opacity: .88; }
+.notif-add-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+.notif-limit-note {
+  font-size: 12px;
+  color: #ca8a04;
+  margin: -8px 0 12px;
+}
+
+/* Email list */
+.notif-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.notif-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 9px 13px;
+  transition: border-color .15s;
+}
+.notif-item:hover { border-color: #475569; }
+.notif-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #166534, #16a34a);
+  color: #fff;
+  font-weight: 700;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.notif-email {
+  flex: 1;
+  font-size: 13px;
+  color: #cbd5e1;
+  word-break: break-all;
+}
+.notif-remove-btn {
+  background: transparent;
+  border: 1px solid #334155;
+  color: #64748b;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all .15s;
+}
+.notif-remove-btn:hover    { border-color: #ef4444; color: #ef4444; background: #450a0a; }
+.notif-remove-btn:disabled { opacity: .5; cursor: default; }
+
+/* Empty / loading */
+.notif-empty {
+  text-align: center;
+  padding: 24px 0;
+  color: #475569;
+  font-size: 13px;
+  margin-bottom: 14px;
+}
+.notif-empty span { font-size: 28px; display: block; margin-bottom: 8px; }
+.notif-loading { display: flex; align-items: center; gap: 10px; color: #64748b; font-size: 13px; padding: 16px 0; }
+
+/* Footer */
+.notif-footer-note {
+  margin: 0;
+  font-size: 12px;
+  color: #475569;
+  line-height: 1.5;
+  border-top: 1px solid #1e293b;
+  padding-top: 12px;
+}

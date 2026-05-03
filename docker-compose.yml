@@ -1,0 +1,78 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# docker-compose.yml — GreenCO2 Full Stack
+# ─────────────────────────────────────────────────────────────────────────────
+# Start everything: docker-compose up --build
+# Stop everything:  docker-compose down
+# Logs:             docker-compose logs -f
+# ─────────────────────────────────────────────────────────────────────────────
+
+version: "3.9"
+
+services:
+
+  # ── PostgreSQL Database ─────────────────────────────────────────────────────
+  db:
+    image: postgres:15-alpine
+    container_name: greenco2_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       ${DB_NAME:-greenco2}
+      POSTGRES_USER:     ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+    volumes:
+      # Persist data across container restarts
+      - postgres_data:/var/lib/postgresql/data
+      # Auto-run schema on first boot
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-greenco2}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Flask Backend ───────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: greenco2_backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - ./backend/.env
+    environment:
+      # Override DB_HOST so the backend finds the db service by name
+      DB_HOST: db
+      APP_ENV: production
+    ports:
+      - "5000:5000"
+    volumes:
+      # Mount ml_engine models so trained models persist
+      - ./backend/ml_engine:/app/ml_engine
+
+  # ── React Frontend ──────────────────────────────────────────────────────────
+  frontend:
+    image: node:20-alpine
+    container_name: greenco2_frontend
+    working_dir: /app
+    restart: unless-stopped
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules          # anonymous volume prevents host node_modules override
+    ports:
+      - "3000:3000"
+    environment:
+      # Point the React dev server to the backend container
+      REACT_APP_API_URL: http://localhost:5000
+    command: sh -c "npm install && npm start"
+
+# ── Persistent volumes ──────────────────────────────────────────────────────
+volumes:
+  postgres_data:
+    driver: local

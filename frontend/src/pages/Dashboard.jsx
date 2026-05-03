@@ -21,6 +21,7 @@
 import React, { useState, useEffect } from 'react';
 import API from '../api/api';
 import '../assets/css/Dashboard.css';
+import { SkeletonLoader, ErrorMessage } from '../components/ui';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -73,13 +74,14 @@ const Dashboard = () => {
     return () => { cancelled = true; };
   }, []);
 
-  // ── Loading ──────────────────────────────────────────────────────────────
+  // ── Loading — skeleton cards matching the 3 KPI cards below ───────────────
   if (loading) {
     return (
       <div className="page">
-        <div className="dashboard-loading">
-          <div className="spinner-large" />
-          <p>Loading dashboard…</p>
+        <h1><span className="page-icon">📊</span> Dashboard</h1>
+        <SkeletonLoader rows={3} type="card" height="110px" />
+        <div style={{ marginTop: 20 }}>
+          <SkeletonLoader rows={1} type="card" height="200px" />
         </div>
       </div>
     );
@@ -89,11 +91,12 @@ const Dashboard = () => {
   if (error) {
     return (
       <div className="page">
-        <div className="card dashboard-error">
-          <span className="dashboard-error-icon">⚠️</span>
-          <h3>Dashboard Unavailable</h3>
-          <p>{error}</p>
-        </div>
+        <h1><span className="page-icon">📊</span> Dashboard</h1>
+        <ErrorMessage
+          title="Dashboard Unavailable"
+          message={error}
+          onRetry={() => window.location.reload()}
+        />
       </div>
     );
   }

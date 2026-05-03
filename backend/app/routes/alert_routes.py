@@ -1,46 +1,29 @@
 """
-alert_routes.py — Alert API Routes for GreenCO2
-=================================================
-Add these routes to app.py by pasting them in or importing this module.
+app/routes/alert_routes.py — Alert API Routes
+==============================================
+Moved from backend/alert_routes.py into the app package.
+Import fix: uses app.utils.db.get_db instead of circular `from app import get_db`.
 
 Routes:
-    GET  /api/alerts           — fetch alert history (paginated, filterable)
-    POST /api/alerts/run       — trigger alert engine on-demand
-    PUT  /api/alerts/<id>/read — mark a single alert as read
-    PUT  /api/alerts/read-all  — mark ALL alerts as read
+    GET  /api/alerts              — fetch alert history (paginated, filterable)
+    POST /api/alerts/run          — trigger alert engine on-demand
+    PUT  /api/alerts/<id>/read    — mark a single alert as read
+    PUT  /api/alerts/read-all     — mark ALL alerts as read
     GET  /api/alerts/unread-count — fast badge counter
 
 All routes require JWT Authorization: Bearer <token>.
-
-To integrate into your existing app.py:
-1. Copy the imports block below into app.py imports.
-2. Register the blueprint:
-       from alert_routes import alerts_bp
-       app.register_blueprint(alerts_bp)
 """
+
+import logging
 
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
+from app.utils.db import get_db
 from ml_engine.alerts.alert_engine import run_alert_engine
 from ml_engine.alerts.email_service import send_alert_email, mark_emails_sent
 
-# Import get_db from your app — adjust the import path if needed.
-# If you keep this in the same file as app.py, just use get_db() directly.
-try:
-    from app import get_db
-except ImportError:
-    import psycopg2, os
-    def get_db():
-        return psycopg2.connect(
-            dbname=os.getenv("DB_NAME"), user=os.getenv("DB_USER"),
-            password=os.getenv("DB_PASSWORD"), host=os.getenv("DB_HOST"),
-            port=os.getenv("DB_PORT"),
-        )
-
-import logging
-logger = logging.getLogger(__name__)
-
+logger   = logging.getLogger(__name__)
 alerts_bp = Blueprint("alerts", __name__, url_prefix="/api/alerts")
 
 
@@ -58,8 +41,7 @@ def get_alerts():
         limit     — max rows (default 50, max 200)
         offset    — pagination offset (default 0)
 
-    Returns:
-        { alerts: [...], total: <int>, unread_count: <int> }
+    Returns: { alerts: [...], total: <int>, unread_count: <int> }
     """
     conn = get_db()
     cur  = conn.cursor()
@@ -72,9 +54,9 @@ def get_alerts():
             return jsonify({"error": "User not found"}), 404
         company_id = row[0]
 
-        # Build dynamic WHERE clause
-        filters   = ["company_id = %s"]
-        params    = [company_id]
+        # ── Build dynamic WHERE clause ────────────────────────────────────────
+        filters = ["company_id = %s"]
+        params  = [company_id]
 
         category = request.args.get("category")
         if category:
@@ -94,18 +76,18 @@ def get_alerts():
 
         where = " AND ".join(filters)
 
-        # Total count (for pagination)
+        # Total count for pagination metadata
         cur.execute(f"SELECT COUNT(*) FROM alerts WHERE {where}", params)
         total = cur.fetchone()[0]
 
-        # Unread count
+        # Unread badge count (always uses company_id only)
         cur.execute(
             "SELECT COUNT(*) FROM alerts WHERE company_id = %s AND is_read = FALSE",
             (company_id,),
         )
         unread_count = cur.fetchone()[0]
 
-        # Fetch page
+        # Fetch the requested page
         cur.execute(
             f"""
             SELECT id, category, severity, title, message,
@@ -160,27 +142,23 @@ def trigger_alerts():
     Manually trigger the alert engine for the authenticated user's company.
     Sends email for any newly generated alerts.
 
-    Returns:
-        { new_alerts: [...], email_sent: <bool> }
+    Returns: { new_alerts: [...], email_sent: <bool>, count: <int> }
     """
     conn = get_db()
     cur  = conn.cursor()
 
     try:
         user_email = get_jwt_identity()
-        cur.execute(
-            "SELECT company_id FROM users WHERE email = %s", (user_email,)
-        )
+        cur.execute("SELECT company_id FROM users WHERE email = %s", (user_email,))
         row = cur.fetchone()
         if not row:
             return jsonify({"error": "User not found"}), 404
         company_id = row[0]
         cur.close()
 
-        # Run alert engine (uses the same connection, manages its own cursor)
+        # Run all alert checks (threshold, trend, anomaly, prediction)
         new_alerts = run_alert_engine(conn, company_id)
 
-        # Send email if there are new alerts
         email_ok = False
         if new_alerts:
             email_ok = send_alert_email(to_email=user_email, alerts=new_alerts)
@@ -189,9 +167,9 @@ def trigger_alerts():
                 mark_emails_sent(conn, ids)
 
         return jsonify({
-            "new_alerts":  new_alerts,
-            "email_sent":  email_ok,
-            "count":       len(new_alerts),
+            "new_alerts": new_alerts,
+            "email_sent": email_ok,
+            "count":      len(new_alerts),
         }), 200
 
     except Exception as e:
@@ -220,10 +198,7 @@ def mark_read(alert_id: int):
         company_id = row[0]
 
         cur.execute(
-            """
-            UPDATE alerts SET is_read = TRUE
-            WHERE id = %s AND company_id = %s
-            """,
+            "UPDATE alerts SET is_read = TRUE WHERE id = %s AND company_id = %s",
             (alert_id, company_id),
         )
         if cur.rowcount == 0:
