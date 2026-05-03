@@ -35,6 +35,12 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from ml_engine.prediction.train_model import train_all_models
 from ml_engine.anomaly.detect import detect_company_anomalies
 
+from alert_routes import alerts_bp                          # ← ADD HERE
+from ml_engine.alerts.alert_engine import run_alert_engine  # ← ADD HERE
+from ml_engine.alerts.email_service import (               # ← ADD HERE
+    send_alert_email, mark_emails_sent                      # ← ADD HERE
+)    
+
 load_dotenv()
 
 # ── Logging ──────────────────────────────────────────────────────────────────
@@ -60,6 +66,7 @@ app.config["JWT_HEADER_TYPE"]     = "Bearer"
 logger.info("JWT configuration loaded. Backend starting…")
 
 jwt    = JWTManager(app)
+app.register_blueprint(alerts_bp)
 bcrypt = Bcrypt(app)
 
 # CORS — allow the React dev server; also expose Authorization header
@@ -102,6 +109,32 @@ scheduler = BackgroundScheduler()
 
 # ⏰ Run every day (you can change timing)
 scheduler.add_job(train_all_models, 'interval', hours=24)
+def run_alerts_for_all_companies():
+    """
+    Scheduled task: run the alert engine for every active company,
+    then email any new alerts to their users.
+    Called every hour by APScheduler.
+    """
+    conn = get_db()
+    cur  = conn.cursor()
+    try:
+        cur.execute("SELECT DISTINCT company_id, email FROM users")
+        rows = cur.fetchall()
+        cur.close()
+ 
+        for company_id, email in rows:
+            new_alerts = run_alert_engine(conn, company_id)
+            if new_alerts:
+                ok = send_alert_email(to_email=email, alerts=new_alerts)
+                if ok:
+                    ids = [a["id"] for a in new_alerts if "id" in a]
+                    mark_emails_sent(conn, ids)
+    except Exception as e:
+        logger.exception("Scheduled alert run failed: %s", e)
+    finally:
+        conn.close()
+ 
+scheduler.add_job(run_alerts_for_all_companies, 'interval', hours=1)
 
 scheduler.start()
 
