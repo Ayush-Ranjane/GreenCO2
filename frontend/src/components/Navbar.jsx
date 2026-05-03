@@ -1,143 +1,89 @@
 /**
- * Navbar.jsx — Global Navigation Component
- * -----------------------------------------
- * Props (via prop-drilling from App.js):
- *   isLoggedIn    {boolean} — controls which nav links are shown
- *   setIsLoggedIn {function} — called on logout to update App-level auth state
- *
- * Features:
- *  - Sticky glassmorphic bar
- *  - Public links (Home, Login) shown when logged out
- *  - Protected links (Dashboard, Analytics, Alerts, Report) when logged in
- *  - Profile dropdown with click-outside close behaviour
- *  - Active route highlighting via useLocation
+ * Navbar.jsx — Top bar component
+ * For authenticated pages: shows hamburger (mobile), theme toggle, page label.
+ * For public pages: shows logo, nav links, sign-in CTA.
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import { Sun, Moon, Menu, Leaf } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
 import '../assets/css/Navbar.css';
 
-const Navbar = ({ isLoggedIn, setIsLoggedIn }) => {
-  /* Controls the profile dropdown open/close state */
-  const [open, setOpen] = useState(false);
+const PAGE_LABELS = {
+  '/client':       'Dashboard',
+  '/analytics':    'Analytics',
+  '/alerts':       'Alerts',
+  '/report':       'Report',
+  '/emission-form':'Log Emissions',
+  '/profile':      'Profile',
+};
 
-  const navigate = useNavigate();
-  const location = useLocation(); // used to highlight the active nav link
-  const dropRef = useRef(null);  // ref for click-outside detection
+const Navbar = ({ isLoggedIn, showMenuButton, onMenuClick }) => {
+  const { theme, toggle } = useTheme();
+  const location = useLocation();
+  const [dropOpen, setDropOpen] = useState(false);
+  const dropRef = useRef(null);
 
-  /**
-   * handleLogout — clears auth tokens and resets global login state
-   * Called from the dropdown menu. No API call needed — JWT is stateless.
-   */
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user_email');
-    setIsLoggedIn(false); // prop-drilled setter from App.js
-    navigate('/');
-  };
+  const pageLabel = PAGE_LABELS[location.pathname] || '';
 
-  /**
-   * Click-outside effect — closes the profile dropdown when the user
-   * clicks anywhere outside the `.profile-container` element.
-   * Prevents the dropdown from getting "stuck" open.
-   */
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (dropRef.current && !dropRef.current.contains(e.target)) {
-        setOpen(false);
+        setDropOpen(false);
       }
     };
+    if (dropOpen) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [dropOpen]);
 
-    // Attach listener only while dropdown is open (performance optimisation)
-    if (open) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
+  /* ── Authenticated top bar ── */
+  if (isLoggedIn) {
+    return (
+      <header className="topbar">
+        <div className="topbar__left">
+          {showMenuButton && (
+            <button className="topbar__menu-btn" onClick={onMenuClick} aria-label="Open menu">
+              <Menu size={20} strokeWidth={1.75} />
+            </button>
+          )}
+          {pageLabel && <span className="topbar__page-label">{pageLabel}</span>}
+        </div>
+        <div className="topbar__right">
+          <button
+            className="topbar__icon-btn"
+            onClick={toggle}
+            aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+            title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+          >
+            {theme === 'dark'
+              ? <Sun size={17} strokeWidth={1.75} />
+              : <Moon size={17} strokeWidth={1.75} />}
+          </button>
+        </div>
+      </header>
+    );
+  }
 
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [open]);
-
-  /**
-   * Helper — returns 'active' class if the given path matches current route.
-   * Used on nav <li> items to highlight the current page.
-   */
-  const isActive = (path) => location.pathname === path ? 'active' : '';
-
+  /* ── Public nav bar ── */
   return (
-    <nav className="navbar">
-
-      {/* ── Brand Logo ── */}
-      <div className="navbar-logo">
-        <Link to={isLoggedIn ? '/client' : '/'} className="navbar-brand-link">
-          🌱 GreenCO₂
-        </Link>
+    <nav className="public-nav">
+      <Link to="/" className="public-nav__brand">
+        <div className="public-nav__logo-icon"><Leaf size={16} strokeWidth={2} /></div>
+        <span>GreenCO₂</span>
+      </Link>
+      <div className="public-nav__actions">
+        <button
+          className="topbar__icon-btn"
+          onClick={toggle}
+          aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+        >
+          {theme === 'dark'
+            ? <Sun size={16} strokeWidth={1.75} />
+            : <Moon size={16} strokeWidth={1.75} />}
+        </button>
+        <Link to="/auth" className="public-nav__signin">Sign In</Link>
       </div>
-
-      {/* ── Navigation Links ── */}
-      <ul className="navbar-links">
-
-        {/* Public links — shown only when logged OUT */}
-        {!isLoggedIn ? (
-          <>
-            <li className={isActive('/')}><Link to="/">Home</Link></li>
-            <li><Link to="/auth" className="nav-cta">Sign In</Link></li>
-          </>
-        ) : (
-          <>
-            {/* Protected links — shown only when logged IN */}
-            <li className={isActive('/client')}>
-              <Link to="/client">Dashboard</Link>
-            </li>
-            <li className={isActive('/analytics')}>
-              <Link to="/analytics">Analytics</Link>
-            </li>
-            <li className={isActive('/alerts')}>
-              <Link to="/alerts">Alerts</Link>
-            </li>
-            <li className={isActive('/report')}>
-              <Link to="/report">Report</Link>
-            </li>
-            <li className={isActive('/emission-form')}>
-              <Link to="/emission-form">Log Emissions</Link>
-            </li>
-
-            {/* ── Profile Dropdown ──
-                ref={dropRef} enables click-outside-to-close behaviour */}
-            <li className="profile-container" ref={dropRef}>
-              <div
-                onClick={() => setOpen(!open)}
-                className={`profile-icon ${open ? 'profile-icon--open' : ''}`}
-                aria-label="Profile menu"
-                aria-expanded={open}
-              >
-                👤
-              </div>
-
-              {/* Dropdown panel — conditionally rendered */}
-              {open && (
-                <div className="dropdown" role="menu">
-                  <Link
-                    to="/profile"
-                    onClick={() => setOpen(false)} // close on navigate
-                    role="menuitem"
-                  >
-                    👤 Profile
-                  </Link>
-                  <div
-                    onClick={handleLogout}
-                    role="menuitem"
-                    className="dropdown-logout"
-                  >
-                    🚪 Logout
-                  </div>
-                </div>
-              )}
-            </li>
-          </>
-        )}
-
-      </ul>
     </nav>
   );
 };

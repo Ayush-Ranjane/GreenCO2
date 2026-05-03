@@ -19,6 +19,7 @@
 import React, { useState, useEffect } from 'react';
 import API from '../api/api';
 import '../assets/css/Profile.css';
+import { Mail, Building2, Factory, MapPin, Lock, Shield, User } from 'lucide-react';
 
 const Profile = () => {
   /* Toggle between view mode (false) and edit mode (true) */
@@ -67,120 +68,93 @@ const Profile = () => {
       });
   }, []); // empty dep array = runs once on mount
 
-  /* Generate initials avatar from email (e.g. "ay@..." → "AY") */
+  /* Generate initials from the pre-@ part of email (e.g. "john.doe@..." → "JD") */
   const initials = form.email
-    ? form.email.slice(0, 2).toUpperCase()
+    ? form.email.split('@')[0].replace(/[^a-zA-Z]/g, '').slice(0, 2).toUpperCase() || '??'
     : '??';
 
   return (
     <div className="page">
 
       {/* ── Page Header ── */}
-      <h1>
-        <span className="page-icon">👤</span>
-        Profile
-      </h1>
-
-      {/* ── Profile Header ──
-          Shows avatar initials + email at the top of the page */}
-      <div className="card profile-header-card">
-        <div className="profile-avatar">{initials}</div>
-        <div className="profile-header-info">
-          <div className="profile-email">{form.email || 'Loading…'}</div>
-          <div className="profile-role">Industry User</div>
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Profile</h1>
+          <p className="page-subtitle">Manage your account details</p>
         </div>
-        <span className="profile-status-badge">🟢 Active</span>
       </div>
 
-      {/* ── User Information Card ──
-          Fields: email (disabled), company, industry, location
-          Edit mode toggled by the Edit/Save button */}
+      {/* ── Profile Hero Card ── */}
+      <div className="card profile-hero">
+        <div className="profile-avatar">{initials}</div>
+        <div className="profile-hero__info">
+          <div className="profile-hero__email">{form.email || 'Loading…'}</div>
+          <div className="profile-hero__role">Industry User</div>
+        </div>
+        <span className="profile-status-badge">● Active</span>
+      </div>
+
+      {/* ── User Information ── */}
       <div className="card">
-        <h3>User Information</h3>
+        <div className="card-title-row">
+          <h3>User Information</h3>
+          {!edit && (
+            <button className="btn btn--ghost btn--sm" onClick={() => setEdit(true)}>Edit</button>
+          )}
+        </div>
 
-        {/* Email — always disabled, cannot be changed */}
-        <label>Email</label>
-        <input
-          disabled
-          value={form.email}
-          className="input"
-          placeholder="Loading…"
-        />
+        <div className="profile-form">
+          <div className="profile-field">
+            <label className="profile-label"><Mail size={12} /> Email</label>
+            <input disabled value={form.email} className="input" placeholder="Loading…" />
+          </div>
+          <div className="profile-field">
+            <label className="profile-label"><Building2 size={12} /> Company</label>
+            <input disabled={!edit} value={form.company}
+              onChange={(e) => setForm({ ...form, company: e.target.value })}
+              className="input" placeholder="Your company name" />
+          </div>
+          <div className="profile-field">
+            <label className="profile-label"><Factory size={12} /> Industry</label>
+            <input disabled={!edit} value={form.industry}
+              onChange={(e) => setForm({ ...form, industry: e.target.value })}
+              className="input" placeholder="e.g. Manufacturing" />
+          </div>
+          <div className="profile-field">
+            <label className="profile-label"><MapPin size={12} /> Location</label>
+            <input disabled={!edit} value={form.location}
+              onChange={(e) => setForm({ ...form, location: e.target.value })}
+              className="input" placeholder="e.g. Mumbai, India" />
+          </div>
+        </div>
 
-        {/* Company — editable in edit mode */}
-        <label>Company</label>
-        <input
-          disabled={!edit}
-          value={form.company}
-          onChange={(e) => setForm({ ...form, company: e.target.value })}
-          className="input"
-          placeholder="Your company name"
-        />
-
-        {/* Industry — editable in edit mode */}
-        <label>Industry</label>
-        <input
-          disabled={!edit}
-          value={form.industry}
-          onChange={(e) => setForm({ ...form, industry: e.target.value })}
-          className="input"
-          placeholder="e.g. Manufacturing"
-        />
-
-        {/* Location — editable in edit mode */}
-        <label>Location</label>
-        <input
-          disabled={!edit}
-          value={form.location}
-          onChange={(e) => setForm({ ...form, location: e.target.value })}
-          className="input"
-          placeholder="e.g. Mumbai, India"
-        />
-
-        {/* Toggle between Edit and Save buttons based on edit state */}
-        {!edit ? (
-          <button className="btn" onClick={() => setEdit(true)}>
-            ✏️ Edit Profile
-          </button>
-        ) : (
+        {edit && (
           <div className="profile-edit-actions">
-            {/* Cancel — discard changes and return to view mode */}
-            <button
-              className="btn-secondary"
-              onClick={() => setEdit(false)}
-            >
-              Cancel
-            </button>
-            {/* Save — sends PUT request */}
-            <button className="btn" onClick={handleSave}>
-              💾 Save Changes
-            </button>
+            <button className="btn btn--ghost btn--sm" onClick={() => setEdit(false)}>Cancel</button>
+            <button className="btn btn--sm" onClick={handleSave}>Save Changes</button>
           </div>
         )}
       </div>
 
-      {/* ── Security Card ── */}
-      <div className="card">
-        <h3>Security</h3>
-        <p className="profile-coming-soon">
-          🔒 Password management — coming soon
-        </p>
-        <button className="btn-secondary" disabled>
-          Change Password
-        </button>
-      </div>
-
-      {/* ── System Access Card ── */}
-      <div className="card">
-        <h3>System Access</h3>
-        <div className="access-rows">
-          <div className="access-row">
-            <span>Role</span>
-            <span className="access-value">Industry User</span>
+      {/* ── Security + Access row ── */}
+      <div className="profile-bottom-row">
+        <div className="card">
+          <div className="card-title-row">
+            <h3>Security</h3>
+            <Lock size={14} style={{ color: 'var(--text-muted)' }} />
           </div>
-          <div className="access-row">
-            <span>Status</span>
-            <span className="access-value access-value--active">● Active</span>
+          <p className="profile-coming-soon">Password management — coming soon</p>
+          <button className="btn btn--ghost btn--sm" disabled style={{ marginTop: '12px' }}>Change Password</button>
+        </div>
+
+        <div className="card">
+          <div className="card-title-row">
+            <h3>System Access</h3>
+            <Shield size={14} style={{ color: 'var(--text-muted)' }} />
+          </div>
+          <div className="access-rows">
+            <div className="access-row"><span>Role</span><span className="access-value">Industry User</span></div>
+            <div className="access-row"><span>Status</span><span className="access-value access-value--active">● Active</span></div>
           </div>
         </div>
       </div>

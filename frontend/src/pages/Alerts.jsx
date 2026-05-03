@@ -56,11 +56,7 @@ function timeAgo(iso) {
 function SeverityBadge({ severity }) {
   const m = SEVERITY_META[severity] || SEVERITY_META.medium;
   return (
-    <span style={{
-      fontSize: '10px', fontWeight: 700, letterSpacing: '.08em',
-      textTransform: 'uppercase', color: m.color,
-      background: m.bg, borderRadius: '4px', padding: '2px 7px',
-    }}>
+    <span className="badge" style={{ color: m.color, background: m.bg, border: `1px solid ${m.color}33` }}>
       {m.icon} {m.label}
     </span>
   );
@@ -69,12 +65,7 @@ function SeverityBadge({ severity }) {
 function CategoryBadge({ category }) {
   const m = CAT_META[category] || { label: category, icon: '🔔' };
   return (
-    <span style={{
-      fontSize: '10px', fontWeight: 600, letterSpacing: '.05em',
-      textTransform: 'uppercase', color: '#64748b',
-      background: 'rgba(100,116,139,.1)', borderRadius: '4px',
-      padding: '2px 7px',
-    }}>
+    <span className="badge badge--cat">
       {m.icon} {m.label}
     </span>
   );
@@ -232,54 +223,43 @@ const Alerts = () => {
   return (
     <div className="page">
 
-      {/* Header */}
+      {/* ── Header ── */}
       <div className="alerts-header">
         <div>
-          <h1>
-            🔔 Alert Centre
-            {unread > 0 && (
-              <span className="unread-badge">{unread}</span>
-            )}
-          </h1>
-          <p className="alerts-subtitle">
-            {total} alert{total !== 1 ? 's' : ''} total · {unread} unread
-          </p>
+          <div className="page-header" style={{ marginBottom: 0 }}>
+            <h1 className="page-title">
+              Alert Centre
+              {unread > 0 && <span className="unread-badge">{unread}</span>}
+            </h1>
+            <p className="page-subtitle">{total} alert{total !== 1 ? 's' : ''} · {unread} unread</p>
+          </div>
         </div>
-
         <div className="alerts-actions">
           {unread > 0 && (
-            <button className="btn btn--ghost" onClick={handleMarkAllRead}>
-              ✓ Mark all read
-            </button>
+            <button className="btn btn--ghost btn--sm" onClick={handleMarkAllRead}>✓ Mark all read</button>
           )}
-          <button
-            className="btn btn--primary"
-            onClick={handleRunEngine}
-            disabled={running}
-          >
-            {running ? '⏳ Running…' : '⚡ Run Alert Engine'}
+          <button className="btn btn--sm" onClick={handleRunEngine} disabled={running}>
+            {running ? <><span className="spinner" /> Running…</> : '⚡ Run Alert Engine'}
           </button>
         </div>
       </div>
 
-      {/* Engine run result banner */}
+      {/* ── Engine result ── */}
       {runResult && (
         <div className={`run-banner ${runResult.ok ? 'run-banner--ok' : 'run-banner--err'}`}>
           {runResult.ok
-            ? `✅ Engine ran — ${runResult.count} new alert${runResult.count !== 1 ? 's' : ''} generated.${runResult.emailSent ? ' Email sent ✉️' : ''}`
-            : `❌ ${runResult.error}`}
+            ? `Engine ran — ${runResult.count} new alert${runResult.count !== 1 ? 's' : ''} generated.${runResult.emailSent ? ' Email sent.' : ''}`
+            : runResult.error}
         </div>
       )}
 
-      {/* Category architecture explainer */}
+      {/* ── Category chips ── */}
       <div className="category-grid">
         {Object.entries(CAT_META).map(([key, meta]) => {
           const sevKey = key === 'anomaly' ? 'critical' : key === 'threshold' ? 'medium' : 'high';
           const sev    = SEVERITY_META[sevKey];
           return (
-            <div
-              key={key}
-              className="category-card"
+            <div key={key} className={`category-card ${filterCat === key ? 'category-card--active' : ''}`}
               style={{ borderColor: sev.color + '44' }}
               onClick={() => setFilterCat(filterCat === key ? '' : key)}
             >
@@ -291,71 +271,54 @@ const Alerts = () => {
         })}
       </div>
 
-      {/* Summary bar */}
+      {/* ── Summary ── */}
       {alerts.length > 0 && <SummaryBar alerts={alerts} />}
 
-      {/* Filters */}
-      <div className="alerts-filters">
-        <select
-          value={filterCat}
-          onChange={e => setFilterCat(e.target.value)}
-          className="filter-select"
-        >
-          <option value="">All Categories</option>
-          <option value="threshold">📊 Threshold</option>
-          <option value="trend">📈 Trend</option>
-          <option value="anomaly">🔬 Anomaly</option>
-          <option value="prediction">🔮 Prediction</option>
-        </select>
-
-        <select
-          value={filterSev}
-          onChange={e => setFilterSev(e.target.value)}
-          className="filter-select"
-        >
-          <option value="">All Severities</option>
-          <option value="critical">🚨 Critical</option>
-          <option value="high">⚠️ High</option>
-          <option value="medium">🟡 Medium</option>
-          <option value="low">✅ Low</option>
-        </select>
-
-        <label className="filter-toggle">
-          <input
-            type="checkbox"
-            checked={filterUnread}
-            onChange={e => setFilterUnread(e.target.checked)}
-          />
-          Unread only
-        </label>
-
-        <button className="btn btn--ghost btn--sm" onClick={fetchAlerts}>
-          🔄 Refresh
-        </button>
+      {/* ── Filters ── */}
+      <div className="alerts-filter-bar">
+        <div className="filter-pill-row">
+          {['', 'threshold', 'trend', 'anomaly', 'prediction'].map(cat => (
+            <button key={cat}
+              className={`filter-pill ${filterCat === cat ? 'filter-pill--active' : ''}`}
+              onClick={() => setFilterCat(cat)}>
+              {cat ? `${CAT_META[cat]?.icon} ${CAT_META[cat]?.label}` : 'All'}
+            </button>
+          ))}
+        </div>
+        <div className="filter-pill-row">
+          {['', 'critical', 'high', 'medium', 'low'].map(sev => (
+            <button key={sev}
+              className={`filter-pill ${filterSev === sev ? 'filter-pill--active filter-pill--sev' : ''}`}
+              style={sev && filterSev === sev ? { background: SEVERITY_META[sev].bg, color: SEVERITY_META[sev].color, borderColor: SEVERITY_META[sev].color + '55' } : {}}
+              onClick={() => setFilterSev(sev)}>
+              {sev ? `${SEVERITY_META[sev]?.icon} ${SEVERITY_META[sev]?.label}` : 'All Severities'}
+            </button>
+          ))}
+        </div>
+        <div className="filter-pill-row filter-pill-row--right">
+          <label className="filter-toggle">
+            <input type="checkbox" checked={filterUnread} onChange={e => setFilterUnread(e.target.checked)} />
+            Unread only
+          </label>
+          <button className="btn btn--ghost btn--sm" onClick={fetchAlerts}>Refresh</button>
+        </div>
       </div>
 
-      {/* Alert list */}
+      {/* ── Alert list ── */}
       {loading ? (
-        <div className="loader-wrap">
-          <div className="loader" />
-          <p>Fetching alerts…</p>
+        <div className="alerts-skeleton">
+          {[1,2,3].map(i => <div key={i} className="card skeleton" style={{ height: '96px' }} />)}
         </div>
       ) : alerts.length === 0 ? (
         <div className="empty-state">
-          <span className="empty-state__icon">✅</span>
+          <div className="empty-state__icon">✅</div>
           <p className="empty-state__title">No alerts match your filters</p>
-          <p className="empty-state__sub">
-            Run the alert engine to check for new issues, or adjust your filters.
-          </p>
+          <p className="empty-state__sub">Run the alert engine to check for new issues, or adjust your filters.</p>
         </div>
       ) : (
         <div className="alerts-list">
           {alerts.map(alert => (
-            <AlertCard
-              key={alert.id}
-              alert={alert}
-              onMarkRead={handleMarkRead}
-            />
+            <AlertCard key={alert.id} alert={alert} onMarkRead={handleMarkRead} />
           ))}
         </div>
       )}

@@ -1,61 +1,10 @@
 /* ============================================================
-   GreenCO₂ — Global Design System
-   Font: Inter (Google Fonts)
-   Aesthetic: Modern Dark / Glassmorphism / AI-Platform SaaS
+   GreenCO₂ — Base Styles
+   Design tokens are in src/styles/tokens.css
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import './styles/tokens.css';
 
-/* ── CSS Variables (Design Tokens) ── */
-:root {
-  /* Palette */
-  --bg-void: #020b14;
-  --bg-deep: #040f1a;
-  --bg-surface: #071626;
-  --bg-raised: #0d2035;
-  --bg-card: rgba(10, 25, 47, 0.6);
-  --bg-glass: rgba(13, 32, 53, 0.55);
-
-  /* Accent */
-  --green-400: #4ade80;
-  --green-500: #22c55e;
-  --green-glow: rgba(34, 197, 94, 0.25);
-
-  /* Highlights */
-  --sky-400: #38bdf8;
-  --sky-glow: rgba(56, 189, 248, 0.2);
-
-  /* Text */
-  --text-primary: #e2e8f0;
-  --text-secondary: #94a3b8;
-  --text-muted: #4b6480;
-
-  /* Status colors */
-  --color-danger:  #ef4444;
-  --color-warning: #eab308;
-  --color-success: var(--green-500);
-
-  /* Border */
-  --border: rgba(56, 189, 248, 0.1);
-  --border-bright: rgba(34, 197, 94, 0.3);
-
-  /* Radius */
-  --radius-sm: 8px;
-  --radius-md: 14px;
-  --radius-lg: 20px;
-  --radius-xl: 28px;
-
-  /* Shadow */
-  --shadow-card: 0 4px 32px rgba(0, 0, 0, 0.5);
-  --shadow-glow-green: 0 0 30px rgba(34, 197, 94, 0.18);
-  --shadow-glow-sky: 0 0 30px rgba(56, 189, 248, 0.15);
-
-  /* Typography */
-  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-
-  /* Transitions */
-  --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
 
 /* ── Reset & Base ── */
 *,
@@ -71,13 +20,15 @@ html {
 }
 
 body {
-  font-family: var(--font-body);
-  background-color: var(--bg-void);
-  color: var(--text-primary);
+  font-family: var(--font-sans);
+  background-color: var(--surface-0);
+  color: var(--text-secondary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
   line-height: 1.6;
+  font-size: var(--text-base);
+  transition: background-color var(--transition-slow), color var(--transition-slow);
 }
 
 /* ── Scrollbar ── */
@@ -86,11 +37,11 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--bg-surface);
+  background: var(--surface-1);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--bg-raised);
+  background: var(--surface-3);
   border-radius: 3px;
 }
 
@@ -105,12 +56,62 @@ code {
 
 /* ── Utility: Gradient Text ── */
 .gradient-text {
-  background: linear-gradient(135deg, var(--green-400) 0%, var(--sky-400) 100%);
+  background: linear-gradient(135deg, #16a34a 0%, #2563eb 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-.card div div {
-  border-radius: 4px;
+/* ── Screen reader only ── */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* ── Shimmer skeleton animation ── */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--surface-2) 25%,
+    var(--surface-3) 50%,
+    var(--surface-2) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-sm);
+}
+
+/* ── Page fade-in animation ── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── Smooth theme transitions for surfaces ── */
+.sidebar,
+.topbar,
+.public-nav,
+.card,
+.footer {
+  transition:
+    background-color var(--transition-slow),
+    border-color var(--transition-slow),
+    box-shadow var(--transition-slow);
 }

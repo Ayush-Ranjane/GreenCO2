@@ -14,8 +14,9 @@ import axios from 'axios';
 import {
   AreaChart, Area, BarChart, Bar,
   XAxis, YAxis, Tooltip, ResponsiveContainer,
-  ReferenceLine, Cell, Legend,
+  ReferenceLine, Cell,
 } from 'recharts';
+import { Wind, Calendar, TrendingUp, AlertTriangle, Download, FileText, Zap } from 'lucide-react';
 import '../assets/css/Report.css';
 
 // ── Config ────────────────────────────────────────────────────────────────────
@@ -62,10 +63,12 @@ function daysAgo(n) {
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-function MetricCard({ icon, label, value, unit, note, highlight }) {
+function MetricCard({ iconComponent, label, value, unit, note, highlight, iconBg, iconColor }) {
   return (
     <div className={`report-metric-card ${highlight ? 'report-metric-card--highlight' : ''}`}>
-      <span className="rmc-icon">{icon}</span>
+      <div className="rmc-icon-box" style={{ background: iconBg || 'rgba(22,163,74,0.1)', color: iconColor || 'var(--color-success)' }}>
+        {iconComponent}
+      </div>
       <span className="rmc-label">{label}</span>
       <div className="rmc-value">
         {value}
@@ -187,18 +190,13 @@ const Report = () => {
 
       {/* ── Page Header ── */}
       <div className="report-top-header">
-        <div>
-          <h1>📄 Emission Report</h1>
-          <p className="report-subtitle">
-            Generate formal compliance reports for any time range
-          </p>
+        <div className="page-header" style={{ marginBottom: 0 }}>
+          <h1 className="page-title">Emission Report</h1>
+          <p className="page-subtitle">Formal compliance reports for any time range</p>
         </div>
-        <button
-          className="btn btn--download"
-          onClick={handleDownload}
-          disabled={downloading || loading || !report}
-        >
-          {downloading ? '⏳ Generating PDF…' : '⬇ Download PDF'}
+        <button className="btn btn--sm btn--download" onClick={handleDownload}
+          disabled={downloading || loading || !report}>
+          {downloading ? <><span className="spinner" /> Generating…</> : <><Download size={14} /> Download PDF</>}
         </button>
       </div>
 
@@ -251,15 +249,12 @@ const Report = () => {
 
       {/* ── Error ── */}
       {error && (
-        <div className="report-error">⚠ {error}</div>
+        <div className="alert danger"><span className="alert-icon">⚠</span>{error}</div>
       )}
 
       {/* ── Loading ── */}
       {loading && (
-        <div className="report-loading">
-          <div className="loader" />
-          <p>Building report…</p>
-        </div>
+        <div className="loader-wrap"><div className="loader" /><span>Building report…</span></div>
       )}
 
       {/* ── Report Content ── */}
@@ -271,11 +266,9 @@ const Report = () => {
               <h2 className="rhc-company">{report.company}</h2>
               <p className="rhc-period">
                 {fmtDate(report.period_start)} — {fmtDate(report.period_end)}
-                <span className="rhc-days"> ({report.days} days · {report.days_recorded} data points)</span>
+                <span className="rhc-days"> · {report.days} days · {report.days_recorded} data points</span>
               </p>
-              <p className="rhc-generated">
-                Generated {new Date(report.generated_at).toLocaleString()}
-              </p>
+              <p className="rhc-generated">Generated {new Date(report.generated_at).toLocaleString()}</p>
             </div>
             <div className="rhc-right">
               <ComplianceBadge status={report.compliance} />
@@ -286,31 +279,28 @@ const Report = () => {
           {/* Key Metrics */}
           <div className="report-metrics-grid">
             <MetricCard
-              icon="💨"
-              label="Total CO₂"
-              value={fmt(report.total_co2)}
-              unit="kg"
+              iconComponent={<Wind size={18} />}
+              iconBg="rgba(22,163,74,0.1)" iconColor="var(--color-success)"
+              label="Total CO₂" value={fmt(report.total_co2)} unit="kg"
               note={`Over ${report.days} days`}
             />
             <MetricCard
-              icon="📅"
-              label="Daily Average"
-              value={fmt(report.avg_daily_co2)}
-              unit="kg/day"
+              iconComponent={<Calendar size={18} />}
+              iconBg="rgba(37,99,235,0.1)" iconColor="var(--color-info)"
+              label="Daily Average" value={fmt(report.avg_daily_co2)} unit="kg/day"
               note={`Limit: ${DAILY_LIMIT.toLocaleString()} kg/day`}
             />
             <MetricCard
-              icon="🔥"
-              label="Peak Day"
-              value={fmt(report.peak_co2)}
-              unit="kg"
+              iconComponent={<TrendingUp size={18} />}
+              iconBg="rgba(217,119,6,0.1)" iconColor="var(--color-warning)"
+              label="Peak Day" value={fmt(report.peak_co2)} unit="kg"
               note={fmtDate(report.peak_day)}
             />
             <MetricCard
-              icon="⚠️"
-              label="Days Over Limit"
-              value={report.days_over_limit}
-              unit="days"
+              iconComponent={<AlertTriangle size={18} />}
+              iconBg={report.days_over_limit > 0 ? 'rgba(220,38,38,0.1)' : 'rgba(22,163,74,0.1)'}
+              iconColor={report.days_over_limit > 0 ? 'var(--color-danger)' : 'var(--color-success)'}
+              label="Days Over Limit" value={report.days_over_limit} unit="days"
               note={`of ${report.days_recorded} recorded`}
               highlight={report.days_over_limit > 0}
             />
@@ -319,7 +309,7 @@ const Report = () => {
           {/* Emission Trend Chart */}
           <div className="card">
             <div className="card-title-row">
-              <h3>📈 Daily Emission Trend</h3>
+              <h3>Daily Emission Trend</h3>
               <span className="chart-legend-note">
                 <span className="dot dot--red" /> Daily limit ({DAILY_LIMIT.toLocaleString()} kg)
               </span>
@@ -332,9 +322,9 @@ const Report = () => {
                     <stop offset="95%" stopColor="#16a34a" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#64748b' }}
-                       tickFormatter={v => v.slice(5)} />
-                <YAxis tick={{ fontSize: 10, fill: '#64748b' }} />
+                <XAxis dataKey="date" tick={{ fontSize: 10, fill: 'var(--text-muted)', fontFamily: 'var(--font-sans)' }}
+                       tickFormatter={v => v.slice(5)} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 10, fill: 'var(--text-muted)', fontFamily: 'var(--font-sans)' }} axisLine={false} tickLine={false} width={44} />
                 <Tooltip content={<CustomTooltip />} />
                 <ReferenceLine y={DAILY_LIMIT} stroke="#ef4444" strokeDasharray="4 3"
                                label={{ value: 'Limit', fill: '#ef4444', fontSize: 9 }} />
@@ -349,13 +339,13 @@ const Report = () => {
             <div className="report-two-col">
               {/* Bar chart */}
               <div className="card">
-                <h3>🏭 Source Breakdown</h3>
+                <h3>Source Breakdown</h3>
                 <ResponsiveContainer width="100%" height={220}>
                   <BarChart data={report.by_source} layout="vertical"
                             margin={{ top: 4, right: 24, left: 0, bottom: 4 }}>
-                    <XAxis type="number" tick={{ fontSize: 10, fill: '#64748b' }} />
+                    <XAxis type="number" tick={{ fontSize: 10, fill: 'var(--text-muted)', fontFamily: 'var(--font-sans)' }} axisLine={false} tickLine={false} />
                     <YAxis type="category" dataKey="label"
-                           tick={{ fontSize: 10, fill: '#94a3b8' }} width={80} />
+                           tick={{ fontSize: 10, fill: 'var(--text-secondary)', fontFamily: 'var(--font-sans)' }} width={80} axisLine={false} tickLine={false} />
                     <Tooltip content={<CustomTooltip />} />
                     <Bar dataKey="co2" name="CO₂" radius={[0, 4, 4, 0]}>
                       {report.by_source.map((entry) => (
@@ -369,7 +359,7 @@ const Report = () => {
 
               {/* Table */}
               <div className="card">
-                <h3>📊 Detail Table</h3>
+                <h3>Detail Table</h3>
                 <table className="report-table">
                   <thead>
                     <tr>
@@ -405,8 +395,7 @@ const Report = () => {
 
           {/* AI Recommendation */}
           <div className={`card recommendation-card priority-${report.priority?.toLowerCase()}`}>
-            <div className="rec-header">
-              <span className="rec-icon">🤖</span>
+            <div className="card-title-row">
               <h3>AI Recommendation</h3>
               <span className={`priority-badge priority-${report.priority?.toLowerCase()}`}>
                 {report.priority} PRIORITY
@@ -417,16 +406,15 @@ const Report = () => {
 
           {/* Download CTA */}
           <div className="card download-cta">
-            <div>
-              <h3>📄 Export This Report</h3>
-              <p>Download a formal, print-ready PDF with all charts, tables, and compliance details.</p>
+            <div className="download-cta__body">
+              <div className="download-cta__icon"><FileText size={22} /></div>
+              <div>
+                <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px', textTransform: 'none', letterSpacing: 0 }}>Export This Report</h3>
+                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', margin: 0 }}>Download a formal, print-ready PDF with all charts and compliance details.</p>
+              </div>
             </div>
-            <button
-              className="btn btn--download btn--lg"
-              onClick={handleDownload}
-              disabled={downloading}
-            >
-              {downloading ? '⏳ Generating…' : '⬇ Download PDF Report'}
+            <button className="btn btn--download" onClick={handleDownload} disabled={downloading}>
+              {downloading ? <><span className="spinner" /> Generating…</> : <><Download size={14} /> Download PDF Report</>}
             </button>
           </div>
         </>

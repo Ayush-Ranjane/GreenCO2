@@ -1,0 +1,74 @@
+/* ═══════════════════════════════════════
+   AppShell.css — Layout wrapper styles
+   ═══════════════════════════════════════ */
+
+/* ── Authenticated app layout ── */
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+  background: var(--surface-0);
+}
+
+.app-shell__body {
+  flex: 1;
+  margin-left: var(--sidebar-width);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  transition: margin-left 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 0;
+}
+
+/* When sidebar is collapsed, shift body left to match icon-only width */
+.app-shell--collapsed .app-shell__body {
+  margin-left: var(--sidebar-collapsed);
+}
+
+.app-shell__main {
+  flex: 1;
+  padding: var(--space-2xl) var(--space-2xl) var(--space-3xl);
+  width: 100%;
+  overflow-x: hidden;
+}
+
+/* ── Public layout ── */
+.public-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--surface-0);
+}
+
+.public-main {
+  flex: 1;
+}
+
+/* ── Mobile sidebar overlay ── */
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: calc(var(--z-sidebar) - 1);
+  backdrop-filter: blur(2px);
+  animation: fadeIn 200ms ease;
+}
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+  /* Sidebar auto-collapses to icon-only at tablet — body matches */
+  .app-shell__body,
+  .app-shell--collapsed .app-shell__body {
+    margin-left: var(--sidebar-collapsed);
+  }
+}
+
+@media (max-width: 768px) {
+  .app-shell__body,
+  .app-shell--collapsed .app-shell__body {
+    margin-left: 0;
+  }
+
+  .app-shell__main {
+    padding: var(--space-lg) var(--space-md) var(--space-2xl);
+  }
+}

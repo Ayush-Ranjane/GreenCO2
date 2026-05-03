@@ -24,6 +24,7 @@
 import React, { useState } from "react";
 import API from "../api/api";
 import "../assets/css/EmissionForm.css";
+import { PlusCircle, X, Save, CheckCircle2, CalendarDays, FlaskConical } from "lucide-react";
 
 /* ── Constants ─────────────────────────────────────────────────────────────── */
 
@@ -155,20 +156,19 @@ const EmissionForm = () => {
     <div className="page">
 
       {/* ── Page Header ── */}
-      <h1>
-        <span className="page-icon">🏭</span>
-        Daily Emission Entry
-      </h1>
-      <p className="page-subtitle">
-        Log emissions from multiple sources for a single day.
-      </p>
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Daily Emission Entry</h1>
+          <p className="page-subtitle">Log emissions from multiple sources for a single day.</p>
+        </div>
+      </div>
 
       <div className="card emission-card">
 
         {/* ── Date Picker ── */}
         <div className="emission-date-row">
           <label className="emission-label" htmlFor="emission-date">
-            📅 Reporting Date
+            <CalendarDays size={14} /> Reporting Date
           </label>
           <input
             id="emission-date"
@@ -182,7 +182,7 @@ const EmissionForm = () => {
 
         {/* ── Source Rows ── */}
         <div className="emission-sources-header">
-          <span className="emission-label">Emission Sources</span>
+          <span className="emission-label"><FlaskConical size={14} /> Emission Sources</span>
           <span className="emission-factor-hint">
             Factor (kg CO₂/unit): Diesel 2.68 · Petrol 2.31 · Gas 2.75 · Elec 0.82
           </span>
@@ -257,7 +257,7 @@ const EmissionForm = () => {
                   title="Remove this source"
                   aria-label={`Remove source row ${index + 1}`}
                 >
-                  ✕
+                  <X size={14} />
                 </button>
 
               </div>
@@ -267,7 +267,7 @@ const EmissionForm = () => {
 
         {/* ── Add Source Button ── */}
         <button className="emission-add-btn" onClick={addSource}>
-          + Add Source
+          <PlusCircle size={15} /> Add Source
         </button>
 
         {/* ── Live Preview Total ── */}
@@ -287,11 +287,9 @@ const EmissionForm = () => {
           disabled={loading}
         >
           {loading ? (
-            <>
-              <span className="spinner" /> Saving…
-            </>
+            <><span className="spinner" /> Saving…</>
           ) : (
-            "💾 Save Entry"
+            <><Save size={15} /> Save Entry</>
           )}
         </button>
 
@@ -300,7 +298,7 @@ const EmissionForm = () => {
       {/* ── Success Result Card ── */}
       {result !== null && (
         <div className="card result-card">
-          <div className="result-icon">✅</div>
+          <div className="result-icon"><CheckCircle2 size={28} /></div>
           <div className="result-content">
             <h3>Entry Saved Successfully</h3>
             <p>

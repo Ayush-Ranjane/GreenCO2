@@ -17,6 +17,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Leaf, Eye, EyeOff } from 'lucide-react';
 import API from '../api/api';
 import '../assets/css/Auth.css';
 
@@ -106,116 +107,107 @@ const Auth = ({ setIsLoggedIn }) => {
     }
   };
 
+  const [showPassword, setShowPassword] = useState(false);
+
   return (
     <div className="auth-page">
-      <div className="auth-card">
 
-        {/* ── Logo / Brand ── */}
-        <div className="auth-logo">
-          <span>🌱</span>
+      {/* ── Left panel — branding ── */}
+      <div className="auth-panel auth-panel--left">
+        <div className="auth-brand">
+          <div className="auth-brand__icon"><Leaf size={24} strokeWidth={2} /></div>
+          <span className="auth-brand__name">GreenCO₂</span>
         </div>
-        <h2>{mode === 'login' ? 'Welcome Back' : 'Create Account'}</h2>
-        <p className="auth-subtitle">
-          {mode === 'login'
-            ? 'Sign in to your GreenCO₂ account'
-            : 'Join GreenCO₂ and start tracking emissions'}
-        </p>
-
-        {/* ── Mode Tabs ── */}
-        <div className="auth-tabs">
-          <button
-            className={`auth-tab ${mode === 'login' ? 'auth-tab--active' : ''}`}
-            onClick={() => switchMode('login')}
-          >
-            Sign In
-          </button>
-          <button
-            className={`auth-tab ${mode === 'register' ? 'auth-tab--active' : ''}`}
-            onClick={() => switchMode('register')}
-          >
-            Register
-          </button>
+        <div className="auth-panel__body">
+          <h2 className="auth-panel__headline">Emission Intelligence for Modern Industry</h2>
+          <p className="auth-panel__sub">AI-powered monitoring, prediction, and compliance — all in one platform.</p>
+          <ul className="auth-features">
+            <li><span className="auth-features__dot" />Real-time CO₂ tracking</li>
+            <li><span className="auth-features__dot" />ML-based emission forecasting</li>
+            <li><span className="auth-features__dot" />CPCB compliance reporting</li>
+          </ul>
         </div>
+      </div>
 
-        {/* ── Error Message ── */}
-        {errMsg && (
-          <div className="auth-error" role="alert">
-            ⚠️ {errMsg}
+      {/* ── Right panel — form ── */}
+      <div className="auth-panel auth-panel--right">
+        <div className="auth-card">
+
+          <h2 className="auth-card__title">
+            {mode === 'login' ? 'Welcome back' : 'Create account'}
+          </h2>
+          <p className="auth-card__subtitle">
+            {mode === 'login'
+              ? 'Sign in to your GreenCO₂ workspace'
+              : 'Join GreenCO₂ and start tracking emissions'}
+          </p>
+
+          {/* ── Mode Tabs ── */}
+          <div className="auth-tabs">
+            <button className={`auth-tab ${mode === 'login' ? 'auth-tab--active' : ''}`} onClick={() => switchMode('login')}>Sign In</button>
+            <button className={`auth-tab ${mode === 'register' ? 'auth-tab--active' : ''}`} onClick={() => switchMode('register')}>Register</button>
           </div>
-        )}
 
-        {/* ── Email Field ── */}
-        <div className="auth-field">
-          <label className="auth-label">Email</label>
-          <input
-            className="auth-input"
-            type="email"
-            placeholder="you@company.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            onKeyDown={handleKeyDown}
-            autoComplete="email"
-          />
-        </div>
-
-        {/* ── Company Field (register only) ── */}
-        {mode === 'register' && (
-          <div className="auth-field">
-            <label className="auth-label">Company Name</label>
-            <input
-              className="auth-input"
-              type="text"
-              placeholder="e.g. Acme Industries"
-              value={company}
-              onChange={(e) => setCompany(e.target.value)}
-              onKeyDown={handleKeyDown}
-              autoComplete="organization"
-            />
-          </div>
-        )}
-
-        {/* ── Password Field ── */}
-        <div className="auth-field">
-          <label className="auth-label">Password</label>
-          <input
-            className="auth-input"
-            type="password"
-            placeholder="••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            onKeyDown={handleKeyDown}
-            autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-          />
-        </div>
-
-        {/* ── Submit Button — disabled while loading ── */}
-        <button
-          className="auth-btn"
-          onClick={mode === 'login' ? handleLogin : handleRegister}
-          disabled={loading}
-        >
-          {loading
-            ? (mode === 'login' ? 'Signing in…' : 'Creating account…')
-            : (mode === 'login' ? 'Sign In →' : 'Create Account →')}
-        </button>
-
-        {/* ── Mode Switch Link ── */}
-        <p className="auth-switch">
-          {mode === 'login' ? (
-            <>Don&apos;t have an account?{' '}
-              <button className="auth-switch-btn" onClick={() => switchMode('register')}>
-                Register here
-              </button>
-            </>
-          ) : (
-            <>Already have an account?{' '}
-              <button className="auth-switch-btn" onClick={() => switchMode('login')}>
-                Sign in
-              </button>
-            </>
+          {/* ── Error ── */}
+          {errMsg && (
+            <div className="auth-error" role="alert">
+              <span>⚠</span> {errMsg}
+            </div>
           )}
-        </p>
 
+          {/* ── Email ── */}
+          <div className="auth-field">
+            <label className="auth-label">Email address</label>
+            <input className="auth-input" type="email" placeholder="you@company.com"
+              value={email} onChange={(e) => setEmail(e.target.value)}
+              onKeyDown={handleKeyDown} autoComplete="email" />
+          </div>
+
+          {/* ── Company (register only) ── */}
+          {mode === 'register' && (
+            <div className="auth-field">
+              <label className="auth-label">Company name</label>
+              <input className="auth-input" type="text" placeholder="e.g. Acme Industries"
+                value={company} onChange={(e) => setCompany(e.target.value)}
+                onKeyDown={handleKeyDown} autoComplete="organization" />
+            </div>
+          )}
+
+          {/* ── Password ── */}
+          <div className="auth-field">
+            <label className="auth-label">Password</label>
+            <div className="auth-input-wrap">
+              <input className="auth-input auth-input--icon-right"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="••••••••"
+                value={password} onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={handleKeyDown}
+                autoComplete={mode === 'login' ? 'current-password' : 'new-password'} />
+              <button type="button" className="auth-input-icon" onClick={() => setShowPassword(v => !v)} tabIndex={-1}>
+                {showPassword ? <EyeOff size={15} strokeWidth={1.75} /> : <Eye size={15} strokeWidth={1.75} />}
+              </button>
+            </div>
+          </div>
+
+          {/* ── Submit ── */}
+          <button className="auth-btn" onClick={mode === 'login' ? handleLogin : handleRegister} disabled={loading}>
+            {loading
+              ? <><span className="spinner" />{mode === 'login' ? 'Signing in…' : 'Creating account…'}</>
+              : (mode === 'login' ? 'Sign In' : 'Create Account')}
+          </button>
+
+          {/* ── Switch mode ── */}
+          <p className="auth-switch">
+            {mode === 'login' ? (
+              <>Don&apos;t have an account?{' '}
+                <button className="auth-switch-btn" onClick={() => switchMode('register')}>Register free</button></>
+            ) : (
+              <>Already have an account?{' '}
+                <button className="auth-switch-btn" onClick={() => switchMode('login')}>Sign in</button></>
+            )}
+          </p>
+
+        </div>
       </div>
     </div>
   );
