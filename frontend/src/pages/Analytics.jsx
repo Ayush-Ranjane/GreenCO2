@@ -30,15 +30,8 @@ const Analytics = () => {
         });
         setModelInfo(infoRes.data);
 
-        // 🔹 Past Data
-        const pastRes = await axios.get("http://localhost:5000/api/dashboard", {
-          headers: { Authorization: `Bearer ${token}` }
-        });
 
-        const pastFormatted = pastRes.data.trend.map(item => ({
-          date: item.date,
-          past: item.co2
-        }));
+
 
         // 🔹 Prediction
         const predRes = await axios.get(
@@ -49,7 +42,7 @@ const Analytics = () => {
         );
 
         const futureFormatted = predRes.data.prediction.map(item => ({
-          date: item.ds,
+          date: item.ds.slice(0, 10),
           future: item.yhat
         }));
 
@@ -67,13 +60,7 @@ const Analytics = () => {
           anomalyMap[item.ds] = item.anomaly;
         });
 
-        // 🔥 Merge all data
-        const merged = [...pastFormatted, ...futureFormatted].map(item => ({
-          ...item,
-          anomaly: anomalyMap[item.date] || 1
-        }));
-
-        setData(merged);
+        setData(futureFormatted);
 
         // 🔥 Trend Calculation
         if (futureFormatted.length >= 2) {
@@ -298,7 +285,7 @@ const Analytics = () => {
               dataKey="date"
               tick={{ fontSize: 11, fill: 'var(--text-muted)', fontFamily: 'var(--font-sans)' }}
               axisLine={false} tickLine={false}
-              tickFormatter={v => v?.slice(5) ?? v}
+              tickFormatter={v => v ? v.slice(5) : v}
             />
             <YAxis
               tick={{ fontSize: 11, fill: 'var(--text-muted)', fontFamily: 'var(--font-sans)' }}

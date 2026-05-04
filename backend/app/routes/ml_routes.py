@@ -64,6 +64,10 @@ def predict():
         # DataFrame or list of dicts — normalize to list
         data = result.to_dict(orient="records") if hasattr(result, "to_dict") else result
 
+        #convert ds to date string if it's a datetime
+        for item in data:
+            item['ds'] = item['ds'].date()
+            
         return jsonify({
             "company_id": company_id,
             "days":       days,

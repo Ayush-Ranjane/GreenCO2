@@ -19,7 +19,7 @@
 import React, { useState, useEffect } from 'react';
 import API from '../api/api';
 import '../assets/css/Profile.css';
-import { Mail, Building2, Factory, MapPin, Lock, Shield, User } from 'lucide-react';
+import { Mail, Building2, Factory, MapPin, Lock, Shield, Bell, Plus, X, AlertCircle } from 'lucide-react';
 
 const Profile = () => {
   /* Toggle between view mode (false) and edit mode (true) */
@@ -32,6 +32,12 @@ const Profile = () => {
     industry: '',
     location: '',
   });
+
+  /* Notification recipients state */
+  const [notifEmails, setNotifEmails]   = useState([]);
+  const [newEmail,    setNewEmail]       = useState('');
+  const [notifSaving, setNotifSaving]   = useState(false);
+  const [notifError,  setNotifError]    = useState('');
 
   /**
    * handleSave — sends updated profile fields to the backend
@@ -55,18 +61,46 @@ const Profile = () => {
   };
 
   /**
-   * Fetch profile data on component mount.
-   * Populates the form state from the backend response.
+   * Fetch profile data and notification emails on mount.
    */
   useEffect(() => {
     API.get('/api/profile')
-      .then((res) => {
-        setForm(res.data);
-      })
-      .catch(() => {
-        alert('Failed to load profile data.');
-      });
-  }, []); // empty dep array = runs once on mount
+      .then((res) => setForm(res.data))
+      .catch(() => alert('Failed to load profile data.'));
+
+    API.get('/api/notifications')
+      .then((res) => setNotifEmails(res.data.emails || []))
+      .catch(() => {});
+  }, []);
+
+  const handleAddEmail = async () => {
+    const email = newEmail.trim().toLowerCase();
+    if (!email || !email.includes('@')) {
+      setNotifError('Enter a valid email address.');
+      return;
+    }
+    setNotifError('');
+    setNotifSaving(true);
+    try {
+      const res = await API.post('/api/notifications', { email });
+      setNotifEmails(res.data.emails || []);
+      setNewEmail('');
+    } catch (err) {
+      setNotifError(err?.response?.data?.error || 'Failed to add email.');
+    } finally {
+      setNotifSaving(false);
+    }
+  };
+
+  const handleRemoveEmail = async (email) => {
+    setNotifError('');
+    try {
+      const res = await API.delete('/api/notifications', { data: { email } });
+      setNotifEmails(res.data.emails || []);
+    } catch (err) {
+      setNotifError(err?.response?.data?.error || 'Failed to remove email.');
+    }
+  };
 
   /* Generate initials from the pre-@ part of email (e.g. "john.doe@..." → "JD") */
   const initials = form.email
@@ -133,6 +167,69 @@ const Profile = () => {
             <button className="btn btn--ghost btn--sm" onClick={() => setEdit(false)}>Cancel</button>
             <button className="btn btn--sm" onClick={handleSave}>Save Changes</button>
           </div>
+        )}
+      </div>
+
+      {/* ── Alert Notification Recipients ── */}
+      <div className="card">
+        <div className="card-title-row">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Bell size={15} style={{ color: 'var(--accent-primary)' }} />
+            <h3>Alert Notification Recipients</h3>
+          </div>
+          <span className="profile-notif-count">{notifEmails.length}/10</span>
+        </div>
+        <p className="profile-coming-soon" style={{ marginBottom: 'var(--space-md)' }}>
+          Emails added here will also receive alert notifications alongside your primary account email.
+        </p>
+
+        {/* Add row */}
+        <div className="profile-notif-add">
+          <input
+            className="input"
+            type="email"
+            placeholder="recipient@example.com"
+            value={newEmail}
+            onChange={(e) => { setNewEmail(e.target.value); setNotifError(''); }}
+            onKeyDown={(e) => e.key === 'Enter' && handleAddEmail()}
+            disabled={notifSaving || notifEmails.length >= 10}
+          />
+          <button
+            className="btn btn--sm"
+            onClick={handleAddEmail}
+            disabled={notifSaving || notifEmails.length >= 10}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}
+          >
+            <Plus size={14} /> Add Email
+          </button>
+        </div>
+
+        {/* Error */}
+        {notifError && (
+          <div className="profile-notif-error">
+            <AlertCircle size={13} /> {notifError}
+          </div>
+        )}
+
+        {/* Recipients list */}
+        {notifEmails.length > 0 ? (
+          <ul className="profile-notif-list">
+            {notifEmails.map((em) => (
+              <li key={em} className="profile-notif-item">
+                <Mail size={13} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                <span className="profile-notif-email">{em}</span>
+                <button
+                  className="profile-notif-remove"
+                  onClick={() => handleRemoveEmail(em)}
+                  title={`Remove ${em}`}
+                >
+                  <X size={13} />
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="profile-notif-empty">No additional recipients yet.</p>
         )}
       </div>
 

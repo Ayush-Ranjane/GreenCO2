@@ -75,12 +75,15 @@ def _run_alert_sweep() -> None:
 
     conn = get_db()
     cur  = conn.cursor()
+    rows = []
     try:
         # Fetch one representative user email per company
         cur.execute("SELECT DISTINCT company_id, email FROM users")
         rows = cur.fetchall()
+    finally:
         cur.close()
 
+    try:
         for company_id, email in rows:
             new_alerts = run_alert_engine(conn, company_id)
             if new_alerts:

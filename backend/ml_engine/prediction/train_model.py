@@ -1,55 +1,60 @@
 from prophet import Prophet
 import pickle
 import os
-from ml_engine.db.load_data import df
+import logging
 import pandas as pd
 from datetime import datetime
 import json
 
+logger = logging.getLogger(__name__)
+
+
 def train_all_models():
-    print("🔄 Training started...")
+    logger.info("Retrain job started.")
 
     try:
-        os.makedirs("models", exist_ok=True)
+        # Load fresh data on every run — avoids stale startup snapshot
+        from ml_engine.db.load_data import load_df
+        df = load_df()
+
+        MODEL_DIR = "ml_engine/prediction/models"
+        os.makedirs(MODEL_DIR, exist_ok=True)
 
         companies = df['company_id'].unique()
 
         for company in companies:
-            print(f"\n📊 Processing company: {company}")
+            logger.info("Processing company_id=%s", company)
 
             df_c = df[df['company_id'] == company][['ds', 'y']].copy()
             df_c = df_c.dropna()
 
-            # 🔹 Skip if not enough data
+            # Skip if not enough data
             if df_c.shape[0] < 10:
-                print(f"⚠️ Skipping {company} (too little data)")
+                logger.warning("Skipping company_id=%s — only %d data points", company, df_c.shape[0])
                 continue
 
-            # 🔹 Ensure proper datetime format
+            # Ensure proper datetime format
             df_c['ds'] = pd.to_datetime(df_c['ds'])
 
-            # 🔹 Sort data (IMPORTANT for Prophet)
+            # Sort data (required by Prophet)
             df_c = df_c.sort_values('ds')
 
-            # 🔹 Train model
+            # Train model
             model = Prophet(
                 daily_seasonality=True,
                 yearly_seasonality=True
             )
-
             model.fit(df_c)
 
-            # 🔹 Save model
-            model_path = f"models/model_{company}.pkl"
-
+            # Save model
+            model_path = f"{MODEL_DIR}/model_{company}.pkl"
             with open(model_path, "wb") as f:
                 pickle.dump(model, f)
 
-            print(f"✅ Model saved: {model_path}")
-            # 🔹 Predictions on training data (for accuracy)
-            forecast = model.predict(df_c)
+            logger.info("Model saved: %s", model_path)
 
-            # 🔹 Calculate simple error (MAE)
+            # Predictions on training data (for MAE)
+            forecast = model.predict(df_c)
             df_c['yhat'] = forecast['yhat']
             mae = abs(df_c['y'] - df_c['yhat']).mean()
 
@@ -57,15 +62,15 @@ def train_all_models():
                 "company_id": int(company),
                 "trained_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "data_points": int(df_c.shape[0]),
-                "mae": round(mae, 2)
+                "mae": round(mae, 2),
             }
 
-            with open(f"models/meta_{company}.json", "w") as f:
+            with open(f"{MODEL_DIR}/meta_{company}.json", "w") as f:
                 json.dump(metadata, f)
 
-            print(f"📊 Metadata saved for {company}")
+            logger.info("Metadata saved for company_id=%s (MAE=%.2f)", company, mae)
 
-        print("\n🎯 All models processed successfully!")
+        logger.info("Retrain job completed — %d companies processed.", len(companies))
 
-    except Exception as e:
-        print("❌ Training failed:", str(e))
+    except Exception as exc:
+        logger.exception("Retrain job failed: %s", exc)

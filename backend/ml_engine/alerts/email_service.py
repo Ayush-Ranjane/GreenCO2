@@ -402,5 +402,8 @@ def mark_emails_sent(conn, alert_ids: list[int]) -> None:
             (alert_ids,),
         )
         conn.commit()
+    except Exception as exc:
+        conn.rollback()
+        logger.error("mark_emails_sent failed (rolled back): %s", exc)
     finally:
         cur.close()
