@@ -4,13 +4,15 @@ import pickle
 import os
 import json
 from datetime import datetime
-from ml_engine.db.load_data import df
 
 def train_all_anomaly_models():
+    from ml_engine.db.load_data import load_df
+
     print("🔄 Training anomaly models...")
 
     os.makedirs("ml_engine/anomaly/models", exist_ok=True)
 
+    df = load_df()
     companies = df['company_id'].unique()
 
     for company in companies:

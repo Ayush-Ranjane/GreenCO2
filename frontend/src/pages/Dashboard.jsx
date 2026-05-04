@@ -21,7 +21,6 @@
 import React, { useState, useEffect } from 'react';
 import API from '../api/api';
 import '../assets/css/Dashboard.css';
-import { SkeletonLoader, ErrorMessage } from '../components/ui';
 import { Activity, BarChart2, ShieldCheck, ShieldAlert, Fuel, Droplets, Flame, Zap as ZapIcon } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -110,6 +109,7 @@ const Dashboard = () => {
 
   const { today_total, monthly_total, trend = [], by_source = [], alert } = data;
   const maxTrendCo2 = trend.length > 0 ? Math.max(...trend.map((t) => t.co2)) : 0;
+  const trendColor = getBarColor(maxTrendCo2);
   const isHighAlert = alert === 'High emission';
 
   return (
@@ -189,8 +189,8 @@ const Dashboard = () => {
             <AreaChart data={trend} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="dashGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor="#16a34a" stopOpacity={0.25} />
-                  <stop offset="95%" stopColor="#16a34a" stopOpacity={0} />
+                  <stop offset="5%"  stopColor={trendColor} stopOpacity={0.25} />
+                  <stop offset="95%" stopColor={trendColor} stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--surface-3)" vertical={false} />
@@ -204,9 +204,9 @@ const Dashboard = () => {
                 cursor={{ stroke: 'var(--surface-3)', strokeWidth: 1 }}
               />
               <ReferenceLine y={1000} stroke="var(--color-danger)" strokeDasharray="5 3" strokeWidth={1.5} />
-              <Area type="monotone" dataKey="co2" stroke="#16a34a" strokeWidth={2.5}
+              <Area type="monotone" dataKey="co2" stroke={trendColor} strokeWidth={2.5}
                     fill="url(#dashGrad)" dot={false}
-                    activeDot={{ r: 5, fill: '#16a34a', stroke: 'var(--surface-1)', strokeWidth: 2 }} />
+                    activeDot={{ r: 5, fill: trendColor, stroke: 'var(--surface-1)', strokeWidth: 2 }} />
             </AreaChart>
           </ResponsiveContainer>
         )}

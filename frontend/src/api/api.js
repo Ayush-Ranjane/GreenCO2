@@ -16,7 +16,9 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://localhost:5000",
+  // Dev: REACT_APP_API_URL=http://localhost:5000
+  // Prod: REACT_APP_API_URL="" (empty) → nginx proxy handles routing
+  baseURL: process.env.REACT_APP_API_URL ?? "http://localhost:5000",
   // withCredentials is intentionally omitted — Bearer token auth, not cookies
 });
 

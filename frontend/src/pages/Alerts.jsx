@@ -13,12 +13,8 @@
  */
 
 import React, { useEffect, useState, useCallback } from 'react';
-import axios from 'axios';
+import API from '../api/api';
 import '../assets/css/Alerts.css';
-
-// ── Config ────────────────────────────────────────────────────────────────────
-
-const API = 'http://localhost:5000';
 
 const SEVERITY_META = {
   critical: { label: 'Critical', color: '#dc2626', bg: 'rgba(220,38,38,.12)', icon: '🚨' },
@@ -33,13 +29,6 @@ const CAT_META = {
   anomaly:    { label: 'Anomaly',    icon: '🔬' },
   prediction: { label: 'Prediction', icon: '🔮' },
 };
-
-// ── Helper ────────────────────────────────────────────────────────────────────
-
-function authHeader() {
-  const token = localStorage.getItem('token');
-  return { Authorization: `Bearer ${token}` };
-}
 
 function timeAgo(iso) {
   const diff = Date.now() - new Date(iso).getTime();
@@ -158,8 +147,7 @@ const Alerts = () => {
       if (filterSev)    params.severity  = filterSev;
       if (filterUnread) params.unread    = 'true';
 
-      const res = await axios.get(`${API}/api/alerts`, {
-        headers: authHeader(),
+      const res = await API.get('/api/alerts', {
         params,
       });
       setAlerts(res.data.alerts || []);
@@ -178,7 +166,7 @@ const Alerts = () => {
 
   const handleMarkRead = async (id) => {
     try {
-      await axios.put(`${API}/api/alerts/${id}/read`, {}, { headers: authHeader() });
+      await API.put(`/api/alerts/${id}/read`, {});
       setAlerts(prev => prev.map(a => a.id === id ? { ...a, is_read: true } : a));
       setUnread(u => Math.max(u - 1, 0));
     } catch (err) {
@@ -190,7 +178,7 @@ const Alerts = () => {
 
   const handleMarkAllRead = async () => {
     try {
-      await axios.put(`${API}/api/alerts/read-all`, {}, { headers: authHeader() });
+      await API.put('/api/alerts/read-all', {});
       setAlerts(prev => prev.map(a => ({ ...a, is_read: true })));
       setUnread(0);
     } catch (err) {
@@ -204,7 +192,7 @@ const Alerts = () => {
     setRunning(true);
     setRunResult(null);
     try {
-      const res = await axios.post(`${API}/api/alerts/run`, {}, { headers: authHeader() });
+      const res = await API.post('/api/alerts/run', {});
       setRunResult({
         count:      res.data.count,
         emailSent:  res.data.email_sent,

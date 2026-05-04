@@ -54,23 +54,20 @@ services:
       # Mount ml_engine models so trained models persist
       - ./backend/ml_engine:/app/ml_engine
 
-  # ── React Frontend ──────────────────────────────────────────────────────────
+  # ── React Frontend (nginx — production build) ────────────────────────────────
   frontend:
-    image: node:20-alpine
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # Empty string = relative URLs; nginx proxy forwards /api/* to backend
+        REACT_APP_API_URL: ""
     container_name: greenco2_frontend
-    working_dir: /app
     restart: unless-stopped
     depends_on:
       - backend
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules          # anonymous volume prevents host node_modules override
     ports:
-      - "3000:3000"
-    environment:
-      # Point the React dev server to the backend container
-      REACT_APP_API_URL: http://localhost:5000
-    command: sh -c "npm install && npm start"
+      - "80:80"
 
 # ── Persistent volumes ──────────────────────────────────────────────────────
 volumes:

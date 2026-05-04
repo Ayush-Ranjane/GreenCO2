@@ -28,6 +28,7 @@ def load_df() -> pd.DataFrame:
         password=os.getenv("DB_PASSWORD"),
         host=os.getenv("DB_HOST", "localhost"),
         port=os.getenv("DB_PORT", "5432"),
+        sslmode=os.getenv("DB_SSLMODE", "prefer"),
     )
     try:
         frame = pd.read_sql(_QUERY, conn)
@@ -36,10 +37,3 @@ def load_df() -> pd.DataFrame:
 
     frame.rename(columns={"date": "ds", "total_emission": "y"}, inplace=True)
     return frame
-
-
-# Module-level convenience alias — used by code that does
-# `from ml_engine.db.load_data import df` at startup.
-# NOTE: this is a one-time snapshot; prefer calling load_df() directly
-# inside scheduled/repeated tasks so data stays fresh.
-df = load_df()

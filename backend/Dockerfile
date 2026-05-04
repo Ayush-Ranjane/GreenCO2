@@ -34,11 +34,11 @@ COPY . .
 EXPOSE 5000
 
 # Run with gunicorn in production mode
-# Workers = 2 * CPU_COUNT + 1 (industry standard formula)
+# Keep one worker because APScheduler runs inside the Flask process.
 CMD ["gunicorn", \
      "--bind", "0.0.0.0:5000", \
-     "--workers", "3", \
-     "--timeout", "120", \
+     "--workers", "1", \
+     "--timeout", "180", \
      "--access-logfile", "-", \
      "--error-logfile", "-", \
      "run:app"]

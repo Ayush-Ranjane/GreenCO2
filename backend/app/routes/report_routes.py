@@ -23,6 +23,7 @@ from flask import Blueprint, jsonify, request, send_file
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from app.utils.db import get_db
+from app.utils.validation import is_valid_email, normalize_email
 from app.config.settings import Config
 
 logger   = logging.getLogger(__name__)
@@ -397,9 +398,9 @@ def add_notification():
     try:
         user_email = get_jwt_identity()
         data       = request.get_json(force=True)
-        new_email  = (data.get("email") or "").strip().lower()
+        new_email  = normalize_email(data.get("email"))
 
-        if not new_email or "@" not in new_email:
+        if not is_valid_email(new_email):
             return jsonify({"error": "Valid email is required"}), 400
         if new_email == user_email:
             return jsonify({"error": "This is already your primary email"}), 400
@@ -441,7 +442,7 @@ def remove_notification():
     try:
         user_email = get_jwt_identity()
         data      = request.get_json(force=True)
-        rem_email = (data.get("email") or "").strip().lower()
+        rem_email = normalize_email(data.get("email"))
 
         cur.execute("SELECT notification_emails FROM users WHERE email = %s", (user_email,))
         row = cur.fetchone()

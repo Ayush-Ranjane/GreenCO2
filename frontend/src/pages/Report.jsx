@@ -10,18 +10,14 @@
  */
 
 import React, { useEffect, useState, useCallback } from 'react';
-import axios from 'axios';
+import API from '../api/api';
 import {
   AreaChart, Area, BarChart, Bar,
   XAxis, YAxis, Tooltip, ResponsiveContainer,
   ReferenceLine, Cell,
 } from 'recharts';
-import { Wind, Calendar, TrendingUp, AlertTriangle, Download, FileText, Zap } from 'lucide-react';
+import { Wind, Calendar, TrendingUp, AlertTriangle, Download, FileText } from 'lucide-react';
 import '../assets/css/Report.css';
-
-// ── Config ────────────────────────────────────────────────────────────────────
-
-const API = 'http://localhost:5000';
 
 const DURATION_OPTIONS = [
   { label: '7 Days',   days: 7 },
@@ -43,10 +39,6 @@ const SOURCE_COLORS = {
 const DAILY_LIMIT = 1000; // kg CO₂
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-function authHeader() {
-  return { Authorization: `Bearer ${localStorage.getItem('token')}` };
-}
 
 function fmt(n) { return Number(n || 0).toLocaleString(undefined, { maximumFractionDigits: 1 }); }
 function fmtDate(iso) {
@@ -124,8 +116,7 @@ const Report = () => {
         ? { start: startDate, end: endDate }
         : { days: selectedDays };
 
-      const res = await axios.get(`${API}/api/report`, {
-        headers: authHeader(),
+      const res = await API.get('/api/report', {
         params,
       });
       setReport(res.data);
@@ -147,8 +138,7 @@ const Report = () => {
         ? { start: startDate, end: endDate }
         : { days: selectedDays };
 
-      const res = await axios.get(`${API}/api/report/pdf`, {
-        headers: authHeader(),
+      const res = await API.get('/api/report/pdf', {
         params,
         responseType: 'blob',
       });

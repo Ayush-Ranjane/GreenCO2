@@ -71,6 +71,10 @@ def create_app(env: str | None = None) -> Flask:
     def health():
         return jsonify({"message": "GreenCO2 Backend Running 🚀"}), 200
 
+    @flask_app.route("/health")
+    def health_check():
+        return jsonify({"status": "ok", "service": "greenco2-backend"}), 200
+
     # ── Register blueprints ───────────────────────────────────────────────────
     _register_blueprints(flask_app)
 

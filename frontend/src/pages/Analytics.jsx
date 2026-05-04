@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import API from '../api/api';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer
@@ -22,24 +22,12 @@ const Analytics = () => {
       try {
         setLoading(true);
 
-        const token = localStorage.getItem("token");
-
         // 🔹 Model Info
-        const infoRes = await axios.get("http://localhost:5000/model-info", {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const infoRes = await API.get("/model-info");
         setModelInfo(infoRes.data);
 
-
-
-
         // 🔹 Prediction
-        const predRes = await axios.get(
-          `http://localhost:5000/predict?days=${days}`,
-          {
-            headers: { Authorization: `Bearer ${token}` }
-          }
-        );
+        const predRes = await API.get(`/predict?days=${days}`);
 
         const futureFormatted = predRes.data.prediction.map(item => ({
           date: item.ds.slice(0, 10),
@@ -47,20 +35,18 @@ const Analytics = () => {
         }));
 
         // 🔹 Anomaly Detection
-        const anomalyRes = await axios.get(
-          "http://localhost:5000/anomaly",
-          {
-            headers: { Authorization: `Bearer ${token}` }
-          }
-        );
+        const anomalyRes = await API.get("/anomaly");
 
         // Create anomaly map → date => anomaly
         const anomalyMap = {};
         anomalyRes.data.anomalies.forEach(item => {
-          anomalyMap[item.ds] = item.anomaly;
+          anomalyMap[item.ds.slice(0, 10)] = item.anomaly;
         });
 
-        setData(futureFormatted);
+        setData(futureFormatted.map(item => ({
+          ...item,
+          anomaly: anomalyMap[item.date],
+        })));
 
         // 🔥 Trend Calculation
         if (futureFormatted.length >= 2) {

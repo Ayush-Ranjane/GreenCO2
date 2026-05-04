@@ -64,3 +64,28 @@ CREATE TABLE IF NOT EXISTS emissions_data (
     company_id   INTEGER     REFERENCES companies(id) ON DELETE SET NULL,
     created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS notification_emails TEXT[] NOT NULL DEFAULT '{}';
+
+CREATE TABLE IF NOT EXISTS alerts (
+    id          SERIAL PRIMARY KEY,
+    company_id  INTEGER     NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    category    TEXT        NOT NULL,
+    severity    TEXT        NOT NULL,
+    title       TEXT        NOT NULL,
+    message     TEXT        NOT NULL,
+    alert_date  DATE        NOT NULL DEFAULT CURRENT_DATE,
+    is_read     BOOLEAN     NOT NULL DEFAULT FALSE,
+    email_sent  BOOLEAN     NOT NULL DEFAULT FALSE,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_alerts_unique_daily
+    ON alerts(company_id, category, title, alert_date);
+
+CREATE INDEX IF NOT EXISTS idx_alerts_company_created
+    ON alerts(company_id, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_alerts_company_unread
+    ON alerts(company_id, is_read);
