@@ -18,12 +18,20 @@ def get_db():
     """
     Open and return a fresh psycopg2 connection.
 
-    Reads connection params from environment variables:
-        DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT
+    Supports either:
+      - DATABASE_URL (standard on Render, Railway, Neon, Supabase, Heroku)
+      - or individual params: DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT
 
     Returns:
         psycopg2 connection object (caller must close it).
     """
+    database_url = os.getenv("DATABASE_URL")
+    if database_url:
+        # Handle postgres:// vs postgresql:// protocol prefix if needed
+        if database_url.startswith("postgres://"):
+            database_url = database_url.replace("postgres://", "postgresql://", 1)
+        return psycopg2.connect(database_url)
+
     return psycopg2.connect(
         dbname=os.getenv("DB_NAME"),
         user=os.getenv("DB_USER"),
@@ -32,3 +40,4 @@ def get_db():
         port=os.getenv("DB_PORT", "5432"),
         sslmode=os.getenv("DB_SSLMODE", "prefer"),
     )
+

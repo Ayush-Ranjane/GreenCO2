@@ -2,19 +2,17 @@
 app/routes/ml_routes.py — ML Inference Endpoints
 =================================================
 Routes:
-    GET  /predict      — 7-day (configurable) emission forecast via Prophet
+    GET  /predict      — N-day emission forecast via Prophet
     GET  /model-info   — model metadata JSON for the current user's company
     GET  /anomaly      — anomaly detection results via Isolation Forest
-    POST /retrain      — manually trigger model retraining (admin/debug)
+    POST /retrain      — manually trigger model retraining for user's company or all
 
-All ML logic lives in ml_engine/ — these routes are thin wrappers that:
-  1. Authenticate the request
-  2. Resolve company_id
-  3. Delegate to the ML module
-  4. Serialize and return the result
+All ML logic lives in ml_engine/ — these routes authenticate the request,
+resolve company_id, delegate to ml_engine, and return clean JSON.
 """
 
 import json
+import os
 import logging
 
 from flask import Blueprint, request, jsonify
@@ -61,22 +59,37 @@ def predict():
         from ml_engine.prediction.predict import predict_company
         result = predict_company(company_id, days)
 
+        if result is None or (hasattr(result, "empty") and result.empty):
+            return jsonify({
+                "company_id": company_id,
+                "days":       days,
+                "prediction": [],
+                "status":     "insufficient_data",
+                "message":    "At least 3 days of emission logs are required to forecast trends.",
+            }), 200
+
         # DataFrame or list of dicts — normalize to list
         data = result.to_dict(orient="records") if hasattr(result, "to_dict") else result
 
-        #convert ds to date string if it's a datetime
+        # Convert ds to date string
         for item in data:
-            item['ds'] = item['ds'].date()
-            
+            if hasattr(item['ds'], 'strftime'):
+                item['ds'] = item['ds'].strftime("%Y-%m-%d")
+            else:
+                item['ds'] = str(item['ds'])[:10]
+            if 'yhat' in item:
+                item['yhat'] = max(0.0, float(item['yhat']))
+
         return jsonify({
             "company_id": company_id,
             "days":       days,
             "prediction": data,
+            "status":     "trained",
         }), 200
 
     except Exception as e:
         logger.exception("Predict error: %s", e)
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": str(e), "prediction": []}), 500
 
     finally:
         cur.close()
@@ -92,8 +105,8 @@ def model_info():
     GET /model-info
     Header: Authorization: Bearer <token>
 
-    Returns the Prophet model metadata JSON stored at
-    ml_engine/prediction/models/meta_<company_id>.json
+    Returns the Prophet model metadata JSON for the company.
+    If the model has not been trained yet, attempts automatic on-demand training.
     """
     conn = get_db()
     cur  = conn.cursor()
@@ -104,16 +117,28 @@ def model_info():
         if err:
             return err
 
-        with open(f"ml_engine/prediction/models/meta_{company_id}.json", "r") as f:
-            meta = json.load(f)
+        from ml_engine.paths import get_prediction_meta_path, get_prediction_model_path
+        from ml_engine.prediction.train_model import train_company_model
 
-        return jsonify(meta), 200
+        meta_path = get_prediction_meta_path(company_id)
+        model_path = get_prediction_model_path(company_id)
+        if not os.path.exists(meta_path) or not os.path.exists(model_path):
+            logger.info("Model or metadata not found for company %s — attempting on-demand training", company_id)
+            meta = train_company_model(company_id)
+            return jsonify(meta), 200
 
-    except FileNotFoundError:
-        return jsonify({"error": f"No model found for company. Run /retrain first."}), 404
+        try:
+            with open(meta_path, "r") as f:
+                meta = json.load(f)
+            return jsonify(meta), 200
+        except Exception:
+            logger.info("Corrupt metadata found for company %s — re-training", company_id)
+            meta = train_company_model(company_id)
+            return jsonify(meta), 200
+
     except Exception as e:
         logger.exception("Model info error: %s", e)
-        return jsonify({"error": str(e)}), 400
+        return jsonify({"error": str(e)}), 500
 
     finally:
         cur.close()
@@ -146,12 +171,12 @@ def anomaly():
 
         return jsonify({
             "company_id": company_id,
-            "anomalies":  result,
+            "anomalies":  result or [],
         }), 200
 
     except Exception as e:
         logger.exception("Anomaly detection error: %s", e)
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": str(e), "anomalies": []}), 500
 
     finally:
         cur.close()
@@ -161,16 +186,43 @@ def anomaly():
 # ── POST /retrain ─────────────────────────────────────────────────────────────
 
 @ml_bp.route("/retrain", methods=["POST"])
+@jwt_required(optional=True)
 def retrain():
     """
     POST /retrain
-    Manually trigger retraining of all company ML models.
-    Primarily for admin use or debugging — scheduler handles this automatically.
+    Manually trigger retraining of company ML models.
+    If authenticated, retrains models specifically for the user's company.
+    If unauthenticated or called by cron, retrains all companies.
     """
+    conn = get_db()
+    cur  = conn.cursor()
+
     try:
-        from ml_engine.prediction.train_model import train_all_models
-        train_all_models()
-        return jsonify({"message": "Model retraining complete"}), 200
+        user_email = get_jwt_identity()
+        company_id = None
+        if user_email:
+            company_id, _ = _get_company_id(cur, user_email)
+
+        from ml_engine.prediction.train_model import train_company_model, train_all_models
+        from ml_engine.anomaly.train_anomaly import train_company_anomaly_model
+
+        if company_id:
+            logger.info("Retraining models on request for company %s", company_id)
+            meta = train_company_model(company_id)
+            train_company_anomaly_model(company_id)
+            return jsonify({
+                "message": f"Model retraining complete for company {company_id}",
+                "meta": meta,
+            }), 200
+        else:
+            logger.info("Retraining models for all companies")
+            train_all_models()
+            return jsonify({"message": "Model retraining complete for all companies"}), 200
+
     except Exception as e:
         logger.exception("Retrain error: %s", e)
         return jsonify({"error": str(e)}), 500
+
+    finally:
+        cur.close()
+        conn.close()

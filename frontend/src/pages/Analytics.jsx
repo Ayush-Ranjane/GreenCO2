@@ -1,10 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import API from '../api/api';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer
 } from 'recharts';
-import { TrendingUp, TrendingDown, Calendar, AlertTriangle, Cpu, Zap } from 'lucide-react';
+import {
+  TrendingUp, TrendingDown, Calendar, AlertTriangle,
+  Cpu, Zap, RefreshCw, PlusCircle, Info
+} from 'lucide-react';
 import '../assets/css/Analytics.css';
 
 const Analytics = () => {
@@ -14,75 +18,112 @@ const Analytics = () => {
   const [peakDay, setPeakDay] = useState(null);
   const [recommendation, setRecommendation] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isRetraining, setIsRetraining] = useState(false);
   const [modelInfo, setModelInfo] = useState(null);
+  const [feedbackMsg, setFeedbackMsg] = useState("");
+
+  const fetchAllData = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      // Fetch model info, forecast, and anomalies in parallel
+      const [infoRes, predRes, anomalyRes] = await Promise.allSettled([
+        API.get("/model-info"),
+        API.get(`/predict?days=${days}`),
+        API.get("/anomaly"),
+      ]);
+
+      // 🔹 Model Info
+      if (infoRes.status === "fulfilled" && infoRes.value?.data) {
+        setModelInfo(infoRes.value.data);
+      } else {
+        setModelInfo(null);
+      }
+
+      // 🔹 Prediction Data
+      let futureFormatted = [];
+      if (predRes.status === "fulfilled" && predRes.value?.data?.prediction) {
+        futureFormatted = predRes.value.data.prediction.map(item => ({
+          date: String(item.ds || "").slice(0, 10),
+          future: Number(item.yhat || 0),
+        }));
+      }
+
+      // 🔹 Anomaly Detection Data
+      const anomalyMap = {};
+      if (anomalyRes.status === "fulfilled" && anomalyRes.value?.data?.anomalies) {
+        anomalyRes.value.data.anomalies.forEach(item => {
+          if (item?.ds) {
+            anomalyMap[String(item.ds).slice(0, 10)] = item.anomaly;
+          }
+        });
+      }
+
+      setData(futureFormatted.map(item => ({
+        ...item,
+        anomaly: anomalyMap[item.date],
+      })));
+
+      // 🔥 Trend Calculation
+      if (futureFormatted.length >= 2) {
+        const first = futureFormatted[0].future;
+        const last = futureFormatted[futureFormatted.length - 1].future;
+        const percent = first > 0 ? (((last - first) / first) * 100) : 0;
+
+        setTrend(percent.toFixed(2));
+
+        if (percent > 10) {
+          setRecommendation("⚠️ Emissions rising fast. Consider reducing high-consumption fuel usage.");
+        } else if (percent > 0) {
+          setRecommendation("📈 Slight increase detected. Monitor ongoing equipment & electricity usage.");
+        } else {
+          setRecommendation("✅ Emissions decreasing. Operations are within sustainable efficiency targets.");
+        }
+      } else {
+        setTrend(0);
+        setRecommendation("");
+      }
+
+      // 🔥 Peak Day
+      if (futureFormatted.length > 0) {
+        const max = futureFormatted.reduce((prev, curr) =>
+          curr.future > prev.future ? curr : prev
+        );
+        setPeakDay(max);
+      } else {
+        setPeakDay(null);
+      }
+
+    } catch (err) {
+      console.error("Analytics fetch error:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [days]);
 
   useEffect(() => {
-
-    const fetchAllData = async () => {
-      try {
-        setLoading(true);
-
-        // 🔹 Model Info
-        const infoRes = await API.get("/model-info");
-        setModelInfo(infoRes.data);
-
-        // 🔹 Prediction
-        const predRes = await API.get(`/predict?days=${days}`);
-
-        const futureFormatted = predRes.data.prediction.map(item => ({
-          date: item.ds.slice(0, 10),
-          future: item.yhat
-        }));
-
-        // 🔹 Anomaly Detection
-        const anomalyRes = await API.get("/anomaly");
-
-        // Create anomaly map → date => anomaly
-        const anomalyMap = {};
-        anomalyRes.data.anomalies.forEach(item => {
-          anomalyMap[item.ds.slice(0, 10)] = item.anomaly;
-        });
-
-        setData(futureFormatted.map(item => ({
-          ...item,
-          anomaly: anomalyMap[item.date],
-        })));
-
-        // 🔥 Trend Calculation
-        if (futureFormatted.length >= 2) {
-          const first = futureFormatted[0].future;
-          const last = futureFormatted[futureFormatted.length - 1].future;
-          const percent = ((last - first) / first) * 100;
-
-          setTrend(percent.toFixed(2));
-
-          if (percent > 10) {
-            setRecommendation("⚠️ Emissions rising fast. Reduce diesel usage immediately.");
-          } else if (percent > 0) {
-            setRecommendation("📈 Slight increase detected. Monitor operations.");
-          } else {
-            setRecommendation("✅ Emissions decreasing. Good performance.");
-          }
-        }
-
-        // 🔥 Peak Day
-        if (futureFormatted.length > 0) {
-          const max = futureFormatted.reduce((prev, curr) =>
-            curr.future > prev.future ? curr : prev
-          );
-          setPeakDay(max);
-        }
-
-      } catch (err) {
-        console.error("Analytics error:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchAllData();
+  }, [fetchAllData]);
 
-  }, [days]);
+  const handleRetrain = async () => {
+    try {
+      setIsRetraining(true);
+      setFeedbackMsg("");
+      const res = await API.post("/retrain");
+      if (res.data?.meta) {
+        setModelInfo(res.data.meta);
+      }
+      setFeedbackMsg("Model retrained successfully ✅");
+      await fetchAllData();
+      setTimeout(() => setFeedbackMsg(""), 4000);
+    } catch (err) {
+      console.error("Retrain error:", err);
+      setFeedbackMsg("Failed to retrain model. Please ensure emission records are logged.");
+      setTimeout(() => setFeedbackMsg(""), 4000);
+    } finally {
+      setIsRetraining(false);
+    }
+  };
 
   const anomalyCount = data.filter(d => d.anomaly === -1).length;
 
@@ -104,7 +145,7 @@ const Analytics = () => {
     );
   };
 
-  if (loading) {
+  if (loading && !isRetraining) {
     return (
       <div className="page">
         <div className="analytics-progress-bar" />
@@ -131,8 +172,23 @@ const Analytics = () => {
       ? <TrendingUp size={18} />
       : <TrendingDown size={18} />;
 
-  const trendColor     = trend > 10 ? 'var(--color-danger)' : trend > 0 ? 'var(--color-warning)' : 'var(--color-success)';
-  const trendBg        = trend > 10 ? 'rgba(220,38,38,0.1)'  : trend > 0 ? 'rgba(217,119,6,0.1)'   : 'rgba(22,163,74,0.1)';
+  const trendColor = trend > 10 ? 'var(--color-danger)' : trend > 0 ? 'var(--color-warning)' : 'var(--color-success)';
+  const trendBg    = trend > 10 ? 'rgba(220,38,38,0.1)'  : trend > 0 ? 'rgba(217,119,6,0.1)'   : 'rgba(22,163,74,0.1)';
+
+  const isModelTrained = modelInfo?.status === "trained" || (modelInfo?.trained_at && modelInfo?.status !== "insufficient_data");
+  const isInsufficient = modelInfo?.status === "insufficient_data";
+
+  const badgeClass = isModelTrained
+    ? "analytics-model-badge--active"
+    : isInsufficient
+      ? "analytics-model-badge--warn"
+      : "analytics-model-badge--inactive";
+
+  const badgeText = isModelTrained
+    ? "Active"
+    : isInsufficient
+      ? "Collecting Data"
+      : "Untrained";
 
   return (
     <div className="page">
@@ -198,26 +254,68 @@ const Analytics = () => {
             <Cpu size={16} strokeWidth={1.75} />
             <h3>ML Model</h3>
           </div>
-          <span className="analytics-model-badge">Active</span>
+          <div className="analytics-model-header-right">
+            <button
+              className="analytics-retrain-btn"
+              onClick={handleRetrain}
+              disabled={isRetraining}
+              title="Retrain prediction model with latest emission records"
+            >
+              <RefreshCw size={12} className={isRetraining ? "analytics-spin" : ""} />
+              {isRetraining ? "Retraining…" : "Retrain Model"}
+            </button>
+            <span className={`analytics-model-badge ${badgeClass}`}>
+              {badgeText}
+            </span>
+          </div>
         </div>
-        {modelInfo ? (
+
+        {feedbackMsg && (
+          <p style={{ fontSize: 'var(--text-xs)', color: feedbackMsg.includes('failed') ? 'var(--color-danger)' : 'var(--color-success)', margin: 'var(--space-sm) 0 0' }}>
+            {feedbackMsg}
+          </p>
+        )}
+
+        {isModelTrained ? (
           <div className="analytics-stat-strip">
             <div className="analytics-stat">
               <span className="analytics-stat__label">Last Trained</span>
-              <span className="analytics-stat__val">{modelInfo.trained_at}</span>
+              <span className="analytics-stat__val">{modelInfo.trained_at || "Just now"}</span>
             </div>
             <div className="analytics-stat-divider" />
             <div className="analytics-stat">
               <span className="analytics-stat__label">Data Points</span>
-              <span className="analytics-stat__val">{modelInfo.data_points}</span>
+              <span className="analytics-stat__val">{modelInfo.data_points ?? "—"}</span>
             </div>
             <div className="analytics-stat-divider" />
             <div className="analytics-stat">
               <span className="analytics-stat__label">Accuracy (MAE)</span>
-              <span className="analytics-stat__val">{modelInfo.mae}</span>
+              <span className="analytics-stat__val">{modelInfo.mae != null ? `${modelInfo.mae} kg` : "—"}</span>
             </div>
           </div>
-        ) : <p className="analytics-no-data" style={{ fontSize: 'var(--text-sm)', margin: 0 }}>No model info available</p>}
+        ) : isInsufficient ? (
+          <div className="analytics-guidance-box">
+            <div className="analytics-guidance-left">
+              <Info size={18} />
+              <span>
+                {modelInfo.message || `Recorded ${modelInfo.data_points || 0} day(s) of data. At least 3 daily emission logs are needed to generate forecasts.`}
+              </span>
+            </div>
+            <Link to="/emission-form" className="analytics-guidance-btn">
+              <PlusCircle size={14} /> Log Daily Emissions
+            </Link>
+          </div>
+        ) : (
+          <div className="analytics-guidance-box">
+            <div className="analytics-guidance-left">
+              <Info size={18} />
+              <span>No model trained yet for your company. Click Retrain Model or log your first emissions.</span>
+            </div>
+            <Link to="/emission-form" className="analytics-guidance-btn">
+              <PlusCircle size={14} /> Log Emissions
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* ── AI Insight ── */}
@@ -256,47 +354,61 @@ const Analytics = () => {
           </div>
         </div>
 
-        <ResponsiveContainer width="100%" height={340}>
-          <AreaChart data={data} margin={{ top: 10, right: 8, left: 0, bottom: 0 }}>
-            <defs>
-              <linearGradient id="gradForecast" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%"  stopColor="#16a34a" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#16a34a" stopOpacity={0} />
-              </linearGradient>
-            </defs>
+        {data.length > 0 ? (
+          <ResponsiveContainer width="100%" height={340}>
+            <AreaChart data={data} margin={{ top: 10, right: 8, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="gradForecast" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%"  stopColor="#16a34a" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#16a34a" stopOpacity={0} />
+                </linearGradient>
+              </defs>
 
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--surface-3)" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--surface-3)" vertical={false} />
 
-            <XAxis
-              dataKey="date"
-              tick={{ fontSize: 11, fill: 'var(--text-muted)', fontFamily: 'var(--font-sans)' }}
-              axisLine={false} tickLine={false}
-              tickFormatter={v => v ? v.slice(5) : v}
-            />
-            <YAxis
-              tick={{ fontSize: 11, fill: 'var(--text-muted)', fontFamily: 'var(--font-sans)' }}
-              axisLine={false} tickLine={false}
-              tickFormatter={v => `${v}`}
-              width={48}
-            />
+              <XAxis
+                dataKey="date"
+                tick={{ fontSize: 11, fill: 'var(--text-muted)', fontFamily: 'var(--font-sans)' }}
+                axisLine={false} tickLine={false}
+                tickFormatter={v => v ? v.slice(5) : v}
+              />
+              <YAxis
+                tick={{ fontSize: 11, fill: 'var(--text-muted)', fontFamily: 'var(--font-sans)' }}
+                axisLine={false} tickLine={false}
+                tickFormatter={v => `${v}`}
+                width={48}
+              />
 
-            <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'var(--surface-3)', strokeWidth: 1 }} />
+              <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'var(--surface-3)', strokeWidth: 1 }} />
 
-            <Area
-              type="monotone" dataKey="future" name="Forecast"
-              stroke="#16a34a" strokeWidth={2.5}
-              fill="url(#gradForecast)"
-              dot={(props) => {
-                const { payload, cx, cy } = props;
-                if (payload.anomaly === -1)
-                  return <circle key={cx} cx={cx} cy={cy} r={5} fill="var(--color-danger)" stroke="#fff" strokeWidth={1.5} />;
-                return null;
-              }}
-              activeDot={{ r: 5, fill: '#16a34a', stroke: 'var(--surface-1)', strokeWidth: 2 }}
-              connectNulls
-            />
-          </AreaChart>
-        </ResponsiveContainer>
+              <Area
+                type="monotone" dataKey="future" name="Forecast"
+                stroke="#16a34a" strokeWidth={2.5}
+                fill="url(#gradForecast)"
+                dot={(props) => {
+                  const { payload, cx, cy } = props;
+                  if (payload.anomaly === -1)
+                    return <circle key={cx} cx={cx} cy={cy} r={5} fill="var(--color-danger)" stroke="#fff" strokeWidth={1.5} />;
+                  return null;
+                }}
+                activeDot={{ r: 5, fill: '#16a34a', stroke: 'var(--surface-1)', strokeWidth: 2 }}
+                connectNulls
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="analytics-empty-chart">
+            <Cpu size={36} strokeWidth={1.5} />
+            <h4 style={{ margin: 0, color: 'var(--text-primary)' }}>No Forecast Available Yet</h4>
+            <p>
+              AI emission forecasting requires at least 3 distinct days of emission logs.
+              Once daily records are entered, Prophet and Isolation Forest models will predict future trends and identify anomalies.
+            </p>
+            <Link to="/emission-form" className="analytics-guidance-btn">
+              <PlusCircle size={14} /> Log Daily Emissions
+            </Link>
+          </div>
+        )}
       </div>
 
     </div>
